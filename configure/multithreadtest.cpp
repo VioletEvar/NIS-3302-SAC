@@ -91,13 +91,17 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
     std::string openresult;
     std::string opentype;
 
-    if (ret > 0) openresult = "success";
-    else openresult = "failed";
+    if (ret >= 0) strcpy(operationresult,"success");
+	else strcpy(operationresult,"failed");
 
-    if (flags & O_RDONLY) opentype = "Read";
-    else if (flags & O_WRONLY) opentype = "Write";
-    else if (flags & O_RDWR) opentype = "Read/Write";
-    else opentype = "other";
+	if (strcmp(commandname, "rm") == 0) {
+        strcpy(operationtype, "Delete");
+    } else {
+        if (flags & O_RDONLY) strcpy(operationtype, "Read");
+        else if (flags & O_WRONLY) strcpy(operationtype, "Write");
+        else if (flags & O_RDWR) strcpy(operationtype, "Read/Write");
+        else strcpy(operationtype, "Other");
+    }
 
     time_t t = time(0);
     if (!logfile.is_open()) return;
