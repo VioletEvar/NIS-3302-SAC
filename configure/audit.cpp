@@ -88,21 +88,16 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
     char logtime[64];
     char username[32];
     struct passwd *pwinfo;
-    std::string operationresult;
-    std::string operationtype;
-    //char* operationresult;
-    //char* operationtype;
-    if (ret >= 0) strcpy(operationresult,"success");
-	else strcpy(operationresult,"failed");
+    std::string openresult;
+    std::string opentype;
 
-	if (strcmp(commandname, "rm") == 0) {
-        strcpy(operationtype, "Delete");
-    } else {
-        if (flags & O_RDONLY) strcpy(operationtype, "Read");
-        else if (flags & O_WRONLY) strcpy(operationtype, "Write");
-        else if (flags & O_RDWR) strcpy(operationtype, "Read/Write");
-        else strcpy(operationtype, "Other");
-    }
+    if (ret > 0) openresult = "success";
+    else openresult = "failed";
+
+    if (flags & O_RDONLY) opentype = "Read";
+    else if (flags & O_WRONLY) opentype = "Write";
+    else if (flags & O_RDWR) opentype = "Read/Write";
+    else opentype = "other";
 
     time_t t = time(0);
     if (!logfile.is_open()) return;
@@ -113,7 +108,7 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
     
     std::lock_guard<std::mutex> lock_log(log_mutex);
     logfile << username << "(" << uid << ") " << commandname << "(" << pid << ") " << logtime 
-            << " \"" << file_path << "\" " << operationtype << " " << operationresult << std::endl;
+            << " \"" << file_path << "\" " << opentype << " " << openresult << std::endl;
     logfile.flush();
 }
 
