@@ -88,8 +88,8 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
     char logtime[64];
     char username[32];
     struct passwd *pwinfo;
-    std::string openresult;
-    std::string opentype;
+    std::string operationresult;
+    std::string operationtype;
 
     if (ret >= 0) strcpy(operationresult,"success");
 	else strcpy(operationresult,"failed");
