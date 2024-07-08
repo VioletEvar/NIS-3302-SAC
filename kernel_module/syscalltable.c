@@ -39,5 +39,3 @@ demo_sys_call_ptr_t * get_syscall_table(void)
 
      return sys_call_table;
 }
-
-

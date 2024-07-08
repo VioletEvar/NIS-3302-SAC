@@ -30,14 +30,22 @@ void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
 	char logtime[64];
 	char username[32];
 	struct passwd *pwinfo;
-	char openresult[10];
-	char opentype[16];
-	if (ret > 0) strcpy(openresult,"success");
-	else strcpy(openresult,"failed");
-	if (flags & O_RDONLY ) strcpy(opentype, "Read");
-	else if (flags & O_WRONLY ) strcpy(opentype, "Write");
-	else if (flags & O_RDWR ) strcpy(opentype, "Read/Write");
-	else strcpy(opentype,"other");
+	char operationresult[10];
+	char operationtype[16];
+
+	if (ret > 0) strcpy(operationresult,"success");
+	else strcpy(operationresult,"failed");
+
+	if (strcmp(commandname, "rm") == 0) {
+		if (ret >= 0) strcpy(operationresult,"success");
+		else strcpy(operationresult,"failed");
+        strcpy(operationtype, "Delete");
+    } else {
+        if (flags & O_RDONLY) strcpy(operationtype, "Read");
+        else if (flags & O_WRONLY) strcpy(operationtype, "Write");
+        else if (flags & O_RDWR) strcpy(operationtype, "Read/Write");
+        else strcpy(operationtype, "Other");
+    }
 
 	time_t t=time(0);
 	if (logfile == NULL)	return;
@@ -45,7 +53,7 @@ void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
 	strcpy(username,pwinfo->pw_name);
 
 	strftime(logtime, sizeof(logtime), TM_FMT, localtime(&t) );
-	fprintf(logfile,"%s(%d) %s(%d) %s \"%s\" %s %s\n",username,uid,commandname,pid,logtime,file_path,opentype, openresult);
+	fprintf(logfile,"%s(%d) %s(%d) %s \"%s\" %s %s\n",username,uid,commandname,pid,logtime,file_path,operationtype, operationresult);
 	fflush(logfile);
 }
 
@@ -136,7 +144,7 @@ int main(int argc, char *argv[]){
         printf("commandname: %s \n",commandname);
         file_path = (char *)( 4 + 16/4 + (int *)NLMSG_DATA(nlh));
         printf("file_path: %s \n",file_path);
-        Log(commandname, uid,pid, file_path,flags,ret);
+        Log(commandname, uid, pid, file_path, flags, ret);
 
     }
 	close(sock_fd);
@@ -144,4 +152,3 @@ int main(int argc, char *argv[]){
 	fclose(logfile);
 	return 0;
 }
-

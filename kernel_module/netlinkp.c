@@ -8,7 +8,7 @@
 
 #define TASK_COMM_LEN 16
 #define NETLINK_TEST 29
-#define AUDITPATH "/home/TestAudit"
+#define AUDITPATH "/home/wbw/Desktop/test"
 #define MAX_LENGTH 256
 #define MAX_MSGSIZE 1200
 
@@ -188,6 +188,99 @@ int AuditOpenat(int dfd, char * pathname, int flags, int ret)
     return 0;
 }
 
+int AuditUnlink(char *pathname, int ret)
+{
+    char commandname[TASK_COMM_LEN];
+    char fullname[MAX_LENGTH];
+    unsigned int size;
+    void *buffer;
+    char auditpath[MAX_LENGTH];
+    const struct cred *cred;
+    struct dentry *parent_dentry;
+
+    memset(fullname, 0, MAX_LENGTH);
+    memset(auditpath, 0, MAX_LENGTH);
+
+    parent_dentry = current->fs->pwd.dentry;
+
+    get_fullname(parent_dentry, pathname, fullname);
+
+    strcpy(auditpath, AUDITPATH);
+
+    if (strncmp(fullname, auditpath, strlen(auditpath)) != 0)
+        return 1;
+
+    size = strlen(fullname) + 16 + TASK_COMM_LEN + 1;
+    buffer = kmalloc(size, 0);
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val;
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = O_WRONLY; // 用 O_WRONLY 表示写操作
+    *((int *)buffer + 3) = ret;
+    strcpy((char *)(4 + (int *)buffer), commandname);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + (int *)buffer), fullname);
+    netlink_sendmsg(buffer, size);
+
+    return 0;
+}
+
+int AuditUnlinkat(int dfd, char *pathname, int ret)
+{
+    char commandname[TASK_COMM_LEN];
+    char fullname[MAX_LENGTH];
+    char auditpath[MAX_LENGTH];
+    char buf[MAX_LENGTH];
+    struct file *filep = NULL;
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+    struct dentry *parent_dentry;
+
+    memset(fullname, 0, MAX_LENGTH);
+    memset(auditpath, 0, MAX_LENGTH);
+    memset(buf, 0, MAX_LENGTH);
+
+    if (!strncmp(pathname, "/", 1))
+        strcpy(fullname, pathname);
+    else
+    {
+        if (dfd == AT_FDCWD)
+        {
+            parent_dentry = current->fs->pwd.dentry;
+            get_fullname(parent_dentry, pathname, fullname);
+        }
+        else
+        {
+            filep = fget_raw(dfd);
+            parent_dentry = filep->f_path.dentry;
+            get_fullname(parent_dentry, pathname, fullname);
+        }
+    }
+
+    strcpy(auditpath, AUDITPATH);
+
+    if (strncmp(fullname, auditpath, strlen(auditpath)) != 0)
+        return 1;
+
+    size = strlen(fullname) + 16 + TASK_COMM_LEN + 1;
+    buffer = kmalloc(size, 0);
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val;
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = O_WRONLY;
+    *((int *)buffer + 3) = ret;
+    strcpy((char *)(4 + (int *)buffer), commandname);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + (int *)buffer), fullname);
+    netlink_sendmsg(buffer, size);
+
+    return 0;
+}
 
 
 void nl_data_ready(struct sk_buff *__skb)
