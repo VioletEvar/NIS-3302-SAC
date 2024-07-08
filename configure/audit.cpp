@@ -90,7 +90,8 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
     struct passwd *pwinfo;
     std::string operationresult;
     std::string operationtype;
-
+    //char* operationresult;
+    //char* operationtype;
     if (ret >= 0) strcpy(operationresult,"success");
 	else strcpy(operationresult,"failed");
 
@@ -112,7 +113,7 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
     
     std::lock_guard<std::mutex> lock_log(log_mutex);
     logfile << username << "(" << uid << ") " << commandname << "(" << pid << ") " << logtime 
-            << " \"" << file_path << "\" " << opentype << " " << openresult << std::endl;
+            << " \"" << file_path << "\" " << operationtype << " " << operationresult << std::endl;
     logfile.flush();
 }
 
