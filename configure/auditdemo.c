@@ -33,12 +33,10 @@ void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
 	char operationresult[10];
 	char operationtype[16];
 
-	if (ret > 0) strcpy(operationresult,"success");
+	if (ret >= 0) strcpy(operationresult,"success");
 	else strcpy(operationresult,"failed");
 
 	if (strcmp(commandname, "rm") == 0) {
-		if (ret >= 0) strcpy(operationresult,"success");
-		else strcpy(operationresult,"failed");
         strcpy(operationtype, "Delete");
     } else {
         if (flags & O_RDONLY) strcpy(operationtype, "Read");
