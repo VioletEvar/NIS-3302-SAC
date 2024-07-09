@@ -8,9 +8,10 @@
 
 #define TASK_COMM_LEN 16
 #define NETLINK_TEST 29
-#define AUDITPATH "/home/wbw/Desktop/test"
+#define AUDITPATH "/home/szy/Desktop/test"
 #define MAX_LENGTH 256
 #define MAX_MSGSIZE 1200
+#define MAX_PAYLOAD 1024  // 根据需要设置合适的大小
 
 static u32 pid=0;
 static struct sock *nl_sk = NULL;
@@ -188,6 +189,7 @@ int AuditOpenat(int dfd, char * pathname, int flags, int ret)
     return 0;
 }
 
+
 int AuditUnlink(char *pathname, int ret)
 {
     char commandname[TASK_COMM_LEN];
@@ -281,6 +283,98 @@ int AuditUnlinkat(int dfd, char *pathname, int ret)
 
     return 0;
 }
+
+int AuditExec(const char *pathname, int ret) {
+    char commandname[TASK_COMM_LEN];
+    char fullname[MAX_LENGTH];
+    unsigned int size;
+    void *buffer;
+    char auditpath[MAX_LENGTH];
+    const struct cred *cred;
+    struct dentry *parent_dentry;
+
+    memset(fullname, 0, MAX_LENGTH);
+    memset(auditpath, 0, MAX_LENGTH);
+
+    parent_dentry = current->fs->pwd.dentry;
+
+    get_fullname(parent_dentry, pathname, fullname);
+
+    strcpy(auditpath, AUDITPATH);
+
+    if (strncmp(fullname, auditpath, strlen(auditpath)) != 0)
+        return 1;
+
+    printk("Info: in AuditExec, fullname is  %s \t; Auditpath is  %s \n", fullname, AUDITPATH);
+
+    size = strlen(fullname) + 16 + TASK_COMM_LEN + 1;
+    buffer = kmalloc(size, 0);
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val; // uid
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = 0; // 使用 O_RDONLY 表示执行操作
+    *((int *)buffer + 3) = ret;
+    strcpy((char *)(4 + (int *)buffer), commandname);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + (int *)buffer), fullname);
+    netlink_sendmsg(buffer, size);
+
+    return 0;
+}
+
+
+int AuditExecat(int dfd, const char *pathname, int flags, int ret) {
+    char commandname[TASK_COMM_LEN];
+    char fullname[MAX_LENGTH];
+    char auditpath[MAX_LENGTH];
+    struct file *filep = NULL;
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+    struct dentry *parent_dentry;
+
+    memset(fullname, 0, MAX_LENGTH);
+    memset(auditpath, 0, MAX_LENGTH);
+
+    if (!strncmp(pathname, "/", 1)) // 如果 pathname 是绝对路径
+        strcpy(fullname, pathname);
+    else {
+        if (dfd == AT_FDCWD) {
+            parent_dentry = current->fs->pwd.dentry;
+            get_fullname(parent_dentry, pathname, fullname);
+        } else {
+            filep = fget_raw(dfd);
+            parent_dentry = filep->f_path.dentry;
+            get_fullname(parent_dentry, pathname, fullname);
+        }
+    }
+
+    strcpy(auditpath, AUDITPATH);
+
+    if (strncmp(fullname, auditpath, strlen(auditpath)) != 0)
+        return 1;
+
+    printk("Info: in AuditExecat, fullname is  %s \t; Auditpath is  %s \n", fullname, AUDITPATH);
+
+    size = strlen(fullname) + 16 + TASK_COMM_LEN + 1;
+    buffer = kmalloc(size, 0);
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val; // uid
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = 0; // 根据 flags 确定具体的执行权限
+    *((int *)buffer + 3) = ret;
+    strcpy((char *)(4 + (int *)buffer), commandname);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + (int *)buffer), fullname);
+    netlink_sendmsg(buffer, size);
+
+    return 0;
+}
+
 
 
 void nl_data_ready(struct sk_buff *__skb)
