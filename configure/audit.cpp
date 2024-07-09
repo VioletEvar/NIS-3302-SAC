@@ -31,11 +31,12 @@ struct sockaddr_nl src_addr, dest_addr;
 struct iovec iov;
 
 std::ofstream logfile;
-std::mutex log_mutex;
 std::mutex config_mutex;
 std::unordered_map<std::string, bool> resource_flags;
 std::atomic<bool> config_changed(false);
-std::atomic<bool> config_updated(false);
+
+
+bool end_log = false;
 
 void readConfig(const std::string& config_file) {
     std::unordered_map<std::string, bool> temp_flags;
@@ -57,7 +58,7 @@ void readConfig(const std::string& config_file) {
     }
     std::lock_guard<std::mutex> lock(config_mutex);
     resource_flags = std::move(temp_flags);
-    config_updated = true;
+    config_changed = true;
 }
 
 void writeConfig(const std::string& config_file) {
@@ -106,7 +107,6 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
 
     strftime(logtime, sizeof(logtime), TM_FMT, localtime(&t));
     
-    std::lock_guard<std::mutex> lock_log(log_mutex);
     logfile << username << "(" << uid << ") " << commandname << "(" << pid << ") " << logtime 
             << " \"" << file_path << "\" " << opentype << " " << openresult << std::endl;
     logfile.flush();
@@ -153,12 +153,24 @@ void killdeal_func(int signum) {
     exit(0);
 }
 
-void message_loop() {
-    while (true) {  // Read message from kernel
+void logGeneration() {
+    while (!end_log) {
+        if (config_changed) {
+            std::lock_guard<std::mutex> lock(config_mutex);
+            config_changed = false;
+            // Print "logging enabled for resource" message when config is updated
+            for (const auto& [resource, flag] : resource_flags) {
+                if (flag) {
+                    std::cout << "Logging enabled for resource: " << resource << std::endl;
+                }
+            }
+        }
+
+        // Read message from kernel
         unsigned int uid, pid, flags, ret;
         char *file_path;
         char *commandname;
-        
+
         recvmsg(sock_fd, &msg, 0);
         // Analyze log info
         uid = *(reinterpret_cast<unsigned int *>(NLMSG_DATA(nlh)));
@@ -195,33 +207,6 @@ void message_loop() {
     }
 }
 
-void monitorConfig(const std::string& config_file) {
-    while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        readConfig(config_file);
-        config_changed = true;
-    }
-}
-
-void logGeneration() {
-    while (true) {
-        if (config_changed || config_updated) {
-            {
-                std::lock_guard<std::mutex> lock(config_mutex);
-                config_changed = false;
-                config_updated = false;
-            }
-            // Only print "logging enabled for resource" message when config is updated
-            for (const auto& [resource, flag] : resource_flags) {
-                if (flag) {
-                    std::cout << "Logging enabled for resource: " << resource << std::endl;
-                }
-            }
-        }
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-}
-
 void userInteraction(const std::string& config_file) {
     std::string command;
     while (true) {
@@ -237,13 +222,14 @@ void userInteraction(const std::string& config_file) {
             {
                 std::lock_guard<std::mutex> lock(config_mutex);
                 resource_flags[resource] = flag;
-                writeConfig(config_file);
                 config_changed = true;
             }
         } else if (command == "exit") {
+            end_log = true;
             break;
         }
     }
+    writeConfig(config_file);
 }
 
 int main(int argc, char *argv[]) {
@@ -274,14 +260,10 @@ int main(int argc, char *argv[]) {
 
     readConfig(config_file);
 
-    std::thread config_thread(monitorConfig, config_file);
     std::thread log_thread(logGeneration);
-    std::thread msg_thread(message_loop);
     std::thread user_thread(userInteraction, config_file);
 
-    config_thread.join();
     log_thread.join();
-    msg_thread.join();
     user_thread.join();
 
     close(sock_fd);
