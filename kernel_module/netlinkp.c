@@ -325,7 +325,7 @@ int AuditExec(const char *pathname, int ret) {
 }
 
 
-int AuditExecat(int dfd, const char *pathname, int flags, int ret) {
+int AuditExecat(int dfd, char *pathname, int flags, int ret) {
     char commandname[TASK_COMM_LEN];
     char fullname[MAX_LENGTH];
     char auditpath[MAX_LENGTH];
@@ -375,6 +375,136 @@ int AuditExecat(int dfd, const char *pathname, int flags, int ret) {
     return 0;
 }
 
+int AuditShutDown(char *pathname, int ret)
+{
+    
+}
+
+int AuditShutDownat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
+
+
+int AuditReboot(char *pathname, int ret)
+{
+    
+}
+
+int AuditRebootat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
+
+
+int AuditInsmod(char *pathname, int ret)
+{
+    
+}
+
+int AuditInsmodat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
+
+
+int AuditRmmod(char *pathname, int ret)
+{
+    
+}
+
+int AuditRmmodat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
+
+
+int AuditDeviceAdd(char *pathname, int ret)
+{
+    
+}
+
+int AuditDeviceAddat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
+
+
+int AuditDeviceRemove(char *pathname, int ret)
+{
+    
+}
+
+int AuditDeviceRemoveat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
+
+
+int AuditMount(char *pathname, int ret)
+{
+    
+}
+
+int AuditMountat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
+
+
+int AuditUnmount(char *pathname, int ret)
+{
+    
+}
+
+int AuditUnmountat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
+
+
+int AuditHttp(char *pathname, int ret)
+{
+    
+}
+
+int AuditHttpat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
+
+
+int AuditFtp(char *pathname, int ret)
+{
+    
+}
+
+int AuditFtpat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
+
+
+int AuditSsh(char *pathname, int ret)
+{
+    
+}
+
+int AuditSshat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
+
+
+int AuditDatabase(char *pathname, int ret)
+{
+    
+}
+
+int AuditDatabaseat(int dfd, char *pathname, int flags, int ret)
+{
+
+}
 
 
 void nl_data_ready(struct sk_buff *__skb)

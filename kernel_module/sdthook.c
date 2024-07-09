@@ -165,6 +165,140 @@ asmlinkage long hooked_sys_execveat(struct pt_regs *regs)
     return ret;
 }
 
+asmlinkage long hooked_sys_shutdown(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_shutdownat(struct pt_regs *regs)
+{
+
+}
+
+
+asmlinkage long hooked_sys_reboot(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_rebootat(struct pt_regs *regs)
+{
+
+}
+
+
+asmlinkage long hooked_sys_insmod(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_insmodat(struct pt_regs *regs)
+{
+
+}
+
+
+asmlinkage long hooked_sys_rmmod(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_rmmodat(struct pt_regs *regs)
+{
+
+}
+
+
+asmlinkage long hooked_sys_deviceadd(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_deviceaddat(struct pt_regs *regs)
+{
+
+}
+
+
+asmlinkage long hooked_sys_deviceremove(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_deviceremoveat(struct pt_regs *regs)
+{
+
+}
+
+
+asmlinkage long hooked_sys_mount(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_mountat(struct pt_regs *regs)
+{
+
+}
+
+
+asmlinkage long hooked_sys_unmount(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_unmountat(struct pt_regs *regs)
+{
+
+}
+
+
+asmlinkage long hooked_sys_http(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_httpat(struct pt_regs *regs)
+{
+
+}
+
+
+asmlinkage long hooked_sys_ftp(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_ftpat(struct pt_regs *regs)
+{
+
+}
+
+
+asmlinkage long hooked_sys_ssh(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_sshat(struct pt_regs *regs)
+{
+
+}
+
+
+asmlinkage long hooked_sys_database(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage long hooked_sys_databaseat(struct pt_regs *regs)
+{
+
+}
+
+
+
+
 static int __init audit_init(void)
 {
     sys_call_table = get_syscall_table();
