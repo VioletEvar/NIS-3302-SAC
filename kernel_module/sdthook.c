@@ -31,6 +31,8 @@ typedef asmlinkage long (*orig_open_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_openat_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_unlink_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_unlinkat_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_execve_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_execveat_t)(struct pt_regs *regs);
 
 demo_sys_call_ptr_t *get_syscall_table(void);
 
@@ -38,6 +40,8 @@ int AuditOpen(const char *pathname, int flags, int ret);
 int AuditOpenat(int dfd, const char *pathname, int flags, int ret);
 int AuditUnlink(const char *pathname, int ret);
 int AuditUnlinkat(int dfd, const char *pathname, int ret);
+int AuditExec(const char *pathname, int ret);
+int AuditExecat(int dfd, const char *pathname, int flags, int ret);
 void netlink_release(void);
 void netlink_init(void);
 
@@ -46,6 +50,8 @@ orig_open_t orig_open = NULL;
 orig_openat_t orig_openat = NULL;
 orig_unlink_t orig_unlink = NULL;
 orig_unlinkat_t orig_unlinkat = NULL;
+orig_execve_t orig_execve = NULL;
+orig_execveat_t orig_execveat = NULL;
 unsigned int level;
 pte_t *pte;
 
@@ -123,6 +129,42 @@ asmlinkage long hooked_sys_unlinkat(struct pt_regs *regs)
     return ret;
 }
 
+asmlinkage long hooked_sys_execve(struct pt_regs *regs)
+{
+    char pathname[MAX_LENGTH];
+    int nbytes;
+    int ret;
+
+    memset(pathname, 0, MAX_LENGTH);
+    nbytes = strncpy_from_user(pathname, (const char __user *)(regs->di), MAX_LENGTH); // regs->di:pathname
+
+    ret = orig_execve(regs);
+
+    AuditExec(pathname, ret);
+
+    return ret;
+}
+
+asmlinkage long hooked_sys_execveat(struct pt_regs *regs)
+{
+    int dfd;
+    char pathname[MAX_LENGTH];
+    int flags;
+    int nbytes;
+    int ret;
+
+    memset(pathname, 0, MAX_LENGTH);
+    dfd = regs->di;
+    nbytes = strncpy_from_user(pathname, (const char __user *)(regs->si), MAX_LENGTH); // regs->si:pathname
+    flags = regs->dx; // regs->dx:flags
+
+    ret = orig_execveat(regs);
+
+    AuditExecat(dfd, pathname, flags, ret);
+
+    return ret;
+}
+
 static int __init audit_init(void)
 {
     sys_call_table = get_syscall_table();
@@ -131,6 +173,8 @@ static int __init audit_init(void)
     orig_openat = (orig_openat_t)sys_call_table[__NR_openat];
     orig_unlink = (orig_unlink_t)sys_call_table[__NR_unlink];
     orig_unlinkat = (orig_unlinkat_t)sys_call_table[__NR_unlinkat];
+    orig_execve = (orig_execve_t)sys_call_table[__NR_execve];
+    orig_execveat = (orig_execveat_t)sys_call_table[__NR_execveat];
 
     pte = lookup_address((unsigned long)sys_call_table, &level);
     set_pte_atomic(pte, pte_mkwrite(*pte));
@@ -140,6 +184,8 @@ static int __init audit_init(void)
     sys_call_table[__NR_openat] = (demo_sys_call_ptr_t)hooked_sys_openat;
     sys_call_table[__NR_unlink] = (demo_sys_call_ptr_t)hooked_sys_unlink;
     sys_call_table[__NR_unlinkat] = (demo_sys_call_ptr_t)hooked_sys_unlinkat;
+    sys_call_table[__NR_execve] = (demo_sys_call_ptr_t)hooked_sys_execve;
+    sys_call_table[__NR_execveat] = (demo_sys_call_ptr_t)hooked_sys_execveat;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
     printk("Info: sys_call_table hooked!\n");
@@ -157,6 +203,8 @@ static void __exit audit_exit(void)
     sys_call_table[__NR_openat] = (demo_sys_call_ptr_t)orig_openat;
     sys_call_table[__NR_unlink] = (demo_sys_call_ptr_t)orig_unlink;
     sys_call_table[__NR_unlinkat] = (demo_sys_call_ptr_t)orig_unlinkat;
+    sys_call_table[__NR_execve] = (demo_sys_call_ptr_t)orig_execve;
+    sys_call_table[__NR_execveat] = (demo_sys_call_ptr_t)hooked_sys_execveat;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
 
