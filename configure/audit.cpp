@@ -34,9 +34,7 @@ std::ofstream logfile;
 std::mutex config_mutex;
 std::unordered_map<std::string, bool> resource_flags;
 std::atomic<bool> config_changed(false);
-
-
-bool end_log = false;
+std::atomic<bool> stop_logging(false);
 
 void readConfig(const std::string& config_file) {
     std::unordered_map<std::string, bool> temp_flags;
@@ -154,7 +152,11 @@ void killdeal_func(int signum) {
 }
 
 void logGeneration() {
-    while (!end_log) {
+    // Set the socket to non-blocking mode
+    int flags = fcntl(sock_fd, F_GETFL, 0);
+    fcntl(sock_fd, F_SETFL, flags | O_NONBLOCK);
+
+    while (!stop_logging) {
         if (config_changed) {
             std::lock_guard<std::mutex> lock(config_mutex);
             config_changed = false;
@@ -171,7 +173,17 @@ void logGeneration() {
         char *file_path;
         char *commandname;
 
-        recvmsg(sock_fd, &msg, 0);
+        int ret_val = recvmsg(sock_fd, &msg, 0);
+        if (ret_val < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));  // Short sleep to avoid busy-waiting
+                continue;
+            } else {
+                perror("recvmsg");
+                break;
+            }
+        }
+
         // Analyze log info
         uid = *(reinterpret_cast<unsigned int *>(NLMSG_DATA(nlh)));
         pid = *(1 + reinterpret_cast<int *>(NLMSG_DATA(nlh)));
@@ -210,7 +222,7 @@ void logGeneration() {
 void userInteraction(const std::string& config_file) {
     std::string command;
     while (true) {
-        std::cout << "Enter 'update' to modify flags, 'exit' to quit: ";
+        std::cout << "Enter 'update' to modify flags, 'exit' to quit: " << std::endl;
         std::cin >> command;
         if (command == "update") {
             std::string resource;
@@ -225,10 +237,10 @@ void userInteraction(const std::string& config_file) {
                 config_changed = true;
             }
         } else if (command == "exit") {
-            end_log = true;
             break;
         }
     }
+    stop_logging = true;
     writeConfig(config_file);
 }
 
@@ -263,8 +275,8 @@ int main(int argc, char *argv[]) {
     std::thread log_thread(logGeneration);
     std::thread user_thread(userInteraction, config_file);
 
-    log_thread.join();
     user_thread.join();
+    log_thread.join();
 
     close(sock_fd);
     free(nlh);
