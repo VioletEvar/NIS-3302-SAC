@@ -42,6 +42,9 @@ void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
     else if (strcmp(commandname, "reboot") == 0) {
         strcpy(operationtype, "Reboot");
     }
+    else if (strcmp(commandname, "shutdown") == 0) {
+        strcpy(operationtype, "Shutdown");
+    }
     else if (flags == 524288) {
         strcpy(operationtype, "Execute");
     } 
