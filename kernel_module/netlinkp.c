@@ -386,15 +386,37 @@ int AuditShutDownat(int dfd, char *pathname, int flags, int ret)
 }
 
 
-int AuditReboot(char *pathname, int ret)
+int AuditReboot(const char *message, int ret)
 {
-    
+    char commandname[TASK_COMM_LEN];
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+
+    size = strlen(message) + 16 + TASK_COMM_LEN + 1;
+    buffer = kmalloc(size, 0);
+    if (!buffer) {
+        printk(KERN_ERR "AuditReboot: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+
+    *((int *)buffer) = cred->uid.val; // UID
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = 0; // reboot 没有 flags 参数，所以设置为 0
+    *((int *)buffer + 3) = ret; // 返回值
+    strcpy((char *)(4 + (int *)buffer), commandname);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + (int *)buffer), message);
+
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
 }
 
-int AuditRebootat(int dfd, char *pathname, int flags, int ret)
-{
-
-}
 
 
 int AuditInsmod(char *pathname, int ret)

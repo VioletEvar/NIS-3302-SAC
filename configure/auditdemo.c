@@ -38,9 +38,14 @@ void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
 
     if (strcmp(commandname, "rm") == 0) {
         strcpy(operationtype, "Delete");
-    } else if (flags == 524288) {
+    } 
+    else if (strcmp(commandname, "reboot") == 0) {
+        strcpy(operationtype, "Reboot");
+    }
+    else if (flags == 524288) {
         strcpy(operationtype, "Execute");
-    } else {
+    } 
+    else {
         if (flags & O_RDONLY) strcpy(operationtype, "Read");
         else if (flags & O_WRONLY) strcpy(operationtype, "Write");
         else if (flags & O_RDWR) strcpy(operationtype, "Read/Write");

@@ -42,6 +42,8 @@ int AuditUnlink(const char *pathname, int ret);
 int AuditUnlinkat(int dfd, const char *pathname, int ret);
 int AuditExec(const char *pathname, int ret);
 int AuditExecat(int dfd, const char *pathname, int flags, int ret);
+int AuditReboot(const char *message, int ret);
+
 void netlink_release(void);
 void netlink_init(void);
 
@@ -52,6 +54,7 @@ orig_unlink_t orig_unlink = NULL;
 orig_unlinkat_t orig_unlinkat = NULL;
 orig_execve_t orig_execve = NULL;
 orig_execveat_t orig_execveat = NULL;
+orig_reboot_t orig_reboot = NULL;
 unsigned int level;
 pte_t *pte;
 
@@ -178,13 +181,22 @@ asmlinkage long hooked_sys_shutdownat(struct pt_regs *regs)
 
 asmlinkage long hooked_sys_reboot(struct pt_regs *regs)
 {
+    char audit_msg[MAX_LENGTH];
+    int ret;
 
+    memset(audit_msg, 0, MAX_LENGTH);
+    snprintf(audit_msg, MAX_LENGTH, "Reboot called with magic1: %d, magic2: %d, cmd: %u, arg: %p",
+             (int)regs->di, (int)regs->si, (unsigned int)regs->dx, (void *)regs->r10);
+
+    ret = orig_reboot(regs);
+
+    AuditReboot(audit_msg, ret);
+
+    return ret;
 }
 
-asmlinkage long hooked_sys_rebootat(struct pt_regs *regs)
-{
 
-}
+
 
 
 asmlinkage long hooked_sys_insmod(struct pt_regs *regs)
@@ -309,6 +321,7 @@ static int __init audit_init(void)
     orig_unlinkat = (orig_unlinkat_t)sys_call_table[__NR_unlinkat];
     orig_execve = (orig_execve_t)sys_call_table[__NR_execve];
     orig_execveat = (orig_execveat_t)sys_call_table[__NR_execveat];
+    orig_reboot = (orig_reboot_t)sys_call_table[__NR_reboot];
 
     pte = lookup_address((unsigned long)sys_call_table, &level);
     set_pte_atomic(pte, pte_mkwrite(*pte));
@@ -320,6 +333,7 @@ static int __init audit_init(void)
     sys_call_table[__NR_unlinkat] = (demo_sys_call_ptr_t)hooked_sys_unlinkat;
     sys_call_table[__NR_execve] = (demo_sys_call_ptr_t)hooked_sys_execve;
     sys_call_table[__NR_execveat] = (demo_sys_call_ptr_t)hooked_sys_execveat;
+    sys_call_table[__NR_reboot] = (demo_sys_call_ptr_t)hooked_sys_reboot;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
     printk("Info: sys_call_table hooked!\n");
@@ -338,7 +352,8 @@ static void __exit audit_exit(void)
     sys_call_table[__NR_unlink] = (demo_sys_call_ptr_t)orig_unlink;
     sys_call_table[__NR_unlinkat] = (demo_sys_call_ptr_t)orig_unlinkat;
     sys_call_table[__NR_execve] = (demo_sys_call_ptr_t)orig_execve;
-    sys_call_table[__NR_execveat] = (demo_sys_call_ptr_t)hooked_sys_execveat;
+    sys_call_table[__NR_execveat] = (demo_sys_call_ptr_t)orig_execveat;
+    sys_call_table[__NR_reboot] = (demo_sys_call_ptr_t)orig_reboot;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
 
