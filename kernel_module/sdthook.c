@@ -16,6 +16,7 @@
 #include <asm/uaccess.h>
 #include <asm/ptrace.h>
 #include <linux/kprobes.h>
+#include <linux/reboot.h>
 
 /*
 ** module macros
@@ -33,6 +34,7 @@ typedef asmlinkage long (*orig_unlink_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_unlinkat_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_execve_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_execveat_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_reboot_t)(struct pt_regs *regs);
 
 demo_sys_call_ptr_t *get_syscall_table(void);
 
@@ -43,6 +45,7 @@ int AuditUnlinkat(int dfd, const char *pathname, int ret);
 int AuditExec(const char *pathname, int ret);
 int AuditExecat(int dfd, const char *pathname, int flags, int ret);
 int AuditReboot(const char *message, int ret);
+int AuditShutdown(const char *message, int ret);
 
 void netlink_release(void);
 void netlink_init(void);
@@ -168,32 +171,30 @@ asmlinkage long hooked_sys_execveat(struct pt_regs *regs)
     return ret;
 }
 
-asmlinkage long hooked_sys_shutdown(struct pt_regs *regs)
-{
-
-}
-
-asmlinkage long hooked_sys_shutdownat(struct pt_regs *regs)
-{
-
-}
-
 
 asmlinkage long hooked_sys_reboot(struct pt_regs *regs)
 {
     char audit_msg[MAX_LENGTH];
     int ret;
+    int cmd = (unsigned int)regs->dx;
 
     memset(audit_msg, 0, MAX_LENGTH);
-    snprintf(audit_msg, MAX_LENGTH, "Reboot called with magic1: %d, magic2: %d, cmd: %u, arg: %p",
-             (int)regs->di, (int)regs->si, (unsigned int)regs->dx, (void *)regs->r10);
 
-    ret = orig_reboot(regs);
-
-    AuditReboot(audit_msg, ret);
+    if (cmd & LINUX_REBOOT_CMD_POWER_OFF) {
+        // Shutdown operation
+        snprintf(audit_msg, MAX_LENGTH, "Shutdown called with cmd: %u", cmd);
+        ret = 0;  // Assuming success for shutdown
+        AuditShutdown(audit_msg, ret);
+    } else {
+        // Reboot operation
+        snprintf(audit_msg, MAX_LENGTH, "Reboot called with cmd: %u", cmd);
+        ret = orig_reboot(regs);
+        AuditReboot(audit_msg, ret);
+    }
 
     return ret;
 }
+
 
 
 
