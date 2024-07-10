@@ -401,9 +401,7 @@ int AuditShutdown(const char *message, int ret)
     strcpy((char *)(4 + (int *)buffer), commandname);
     strcpy((char *)(4 + TASK_COMM_LEN / 4 + (int *)buffer), message);
 
-    // Replace with your audit mechanism (e.g., netlink_sendmsg)
-    printk("AuditShutdown: %s\n", message);
-
+    netlink_sendmsg(buffer, size);
     kfree(buffer);
 
     return 0;
