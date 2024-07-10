@@ -32,17 +32,8 @@ iss >> entry.uid;
 iss.ignore(2, ')');
 std::getline(iss, entry.operation, '(');
 iss >> entry.operation_id;
-iss.ignore(2, ' ');
-
-// 读取完整的时间部分，包括日期和时间
-std::getline(iss, entry.time, ' ');
-std::cout << entry.time << std::endl;
-std::string timePart;
-std::getline(iss, timePart, ' ');
-std::cout << timePart << std::endl;
-entry.time += " " + timePart;
-std::cout << entry.time << std::endl;
-
+iss.ignore(2, ')');
+iss >> entry.time;
 std::getline(iss, entry.file_path, '"');
 std::getline(iss, entry.file_path, '"');
 std::getline(iss, entry.details, ' ');
@@ -61,14 +52,6 @@ throw std::runtime_error("DB connection failed: " + std::string(conn.error()));
 }
 std::cout << "Connected to database successfully." << std::endl; // 调试输出
 return conn;
-}
-
-
-// 清空日志条目表
-void clearLogEntries(mysqlpp::Connection& conn) {
-mysqlpp::Query query = conn.query("TRUNCATE TABLE log_entries");
-query.execute();
-std::cout << "Cleared log_entries table." << std::endl; // 调试输出
 }
 
 // 将日志条目插入数据库
@@ -174,9 +157,6 @@ std::cout << std::endl << std::endl;
 // 连接到数据库
 mysqlpp::Connection conn = connectDatabase();
 
-//
-clearLogEntries(conn);
-
 // 将日志条目插入数据库
 insertLogEntries(conn, logEntries);
 
@@ -204,5 +184,3 @@ return 0;
 }
     
    
-
-
