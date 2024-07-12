@@ -202,48 +202,48 @@ asmlinkage long hooked_sys_reboot(struct pt_regs *regs)
 }
 
 
-asmlinkage long hooked_sys_insmod(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_insmod(struct pt_regs *regs)
+// {
     
-}
+// }
 
-asmlinkage long hooked_sys_insmodat(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_insmodat(struct pt_regs *regs)
+// {
 
-}
-
-
-asmlinkage long hooked_sys_rmmod(struct pt_regs *regs)
-{
-
-}
-
-asmlinkage long hooked_sys_rmmodat(struct pt_regs *regs)
-{
-
-}
+// }
 
 
-asmlinkage long hooked_sys_deviceadd(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_rmmod(struct pt_regs *regs)
+// {
 
-}
+// }
 
-asmlinkage long hooked_sys_deviceaddat(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_rmmodat(struct pt_regs *regs)
+// {
 
-}
+// }
 
 
-asmlinkage long hooked_sys_deviceremove(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_deviceadd(struct pt_regs *regs)
+// {
 
-}
+// }
 
-asmlinkage long hooked_sys_deviceremoveat(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_deviceaddat(struct pt_regs *regs)
+// {
 
-}
+// }
+
+
+// asmlinkage long hooked_sys_deviceremove(struct pt_regs *regs)
+// {
+
+// }
+
+// asmlinkage long hooked_sys_deviceremoveat(struct pt_regs *regs)
+// {
+
+// }
 
 
 asmlinkage long hooked_sys_mount(struct pt_regs *regs)
@@ -288,55 +288,55 @@ asmlinkage long hooked_sys_umount2(struct pt_regs *regs)
 
     ret = orig_umount2(regs);
 
-    AuditUnmount(target, flags, ret);
+    AuditUnmount2(target, flags, ret);
 
     return ret;
 }
 
 
 
-asmlinkage long hooked_sys_http(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_http(struct pt_regs *regs)
+// {
 
-}
+// }
 
-asmlinkage long hooked_sys_httpat(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_httpat(struct pt_regs *regs)
+// {
 
-}
-
-
-asmlinkage long hooked_sys_ftp(struct pt_regs *regs)
-{
-
-}
-
-asmlinkage long hooked_sys_ftpat(struct pt_regs *regs)
-{
-
-}
+// }
 
 
-asmlinkage long hooked_sys_ssh(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_ftp(struct pt_regs *regs)
+// {
 
-}
+// }
 
-asmlinkage long hooked_sys_sshat(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_ftpat(struct pt_regs *regs)
+// {
 
-}
+// }
 
 
-asmlinkage long hooked_sys_database(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_ssh(struct pt_regs *regs)
+// {
 
-}
+// }
 
-asmlinkage long hooked_sys_databaseat(struct pt_regs *regs)
-{
+// asmlinkage long hooked_sys_sshat(struct pt_regs *regs)
+// {
 
-}
+// }
+
+
+// asmlinkage long hooked_sys_database(struct pt_regs *regs)
+// {
+
+// }
+
+// asmlinkage long hooked_sys_databaseat(struct pt_regs *regs)
+// {
+
+// }
 
 
 

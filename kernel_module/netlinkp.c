@@ -441,48 +441,48 @@ int AuditReboot(const char *message, int ret)
 
 
 
-int AuditInsmod(char *pathname, int ret)
-{
+// int AuditInsmod(char *pathname, int ret)
+// {
     
-}
+// }
 
-int AuditInsmodat(int dfd, char *pathname, int flags, int ret)
-{
+// int AuditInsmodat(int dfd, char *pathname, int flags, int ret)
+// {
 
-}
+// }
 
 
-int AuditRmmod(char *pathname, int ret)
-{
+// int AuditRmmod(char *pathname, int ret)
+// {
     
-}
+// }
 
-int AuditRmmodat(int dfd, char *pathname, int flags, int ret)
-{
+// int AuditRmmodat(int dfd, char *pathname, int flags, int ret)
+// {
 
-}
+// }
 
 
-int AuditDeviceAdd(char *pathname, int ret)
-{
+// int AuditDeviceAdd(char *pathname, int ret)
+// {
     
-}
+// }
 
-int AuditDeviceAddat(int dfd, char *pathname, int flags, int ret)
-{
+// int AuditDeviceAddat(int dfd, char *pathname, int flags, int ret)
+// {
 
-}
+// }
 
 
-int AuditDeviceRemove(char *pathname, int ret)
-{
+// int AuditDeviceRemove(char *pathname, int ret)
+// {
     
-}
+// }
 
-int AuditDeviceRemoveat(int dfd, char *pathname, int flags, int ret)
-{
+// int AuditDeviceRemoveat(int dfd, char *pathname, int flags, int ret)
+// {
 
-}
+// }
 
 
 int AuditMount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data, int ret)
@@ -555,48 +555,48 @@ int AuditUnmount2(const char *target, int flags, int ret)
 
 
 
-int AuditHttp(char *pathname, int ret)
-{
+// int AuditHttp(char *pathname, int ret)
+// {
     
-}
+// }
 
-int AuditHttpat(int dfd, char *pathname, int flags, int ret)
-{
+// int AuditHttpat(int dfd, char *pathname, int flags, int ret)
+// {
 
-}
+// }
 
 
-int AuditFtp(char *pathname, int ret)
-{
+// int AuditFtp(char *pathname, int ret)
+// {
     
-}
+// }
 
-int AuditFtpat(int dfd, char *pathname, int flags, int ret)
-{
+// int AuditFtpat(int dfd, char *pathname, int flags, int ret)
+// {
 
-}
+// }
 
 
-int AuditSsh(char *pathname, int ret)
-{
+// int AuditSsh(char *pathname, int ret)
+// {
     
-}
+// }
 
-int AuditSshat(int dfd, char *pathname, int flags, int ret)
-{
+// int AuditSshat(int dfd, char *pathname, int flags, int ret)
+// {
 
-}
+// }
 
 
-int AuditDatabase(char *pathname, int ret)
-{
+// int AuditDatabase(char *pathname, int ret)
+// {
     
-}
+// }
 
-int AuditDatabaseat(int dfd, char *pathname, int flags, int ret)
-{
+// int AuditDatabaseat(int dfd, char *pathname, int flags, int ret)
+// {
 
-}
+// }
 
 
 void nl_data_ready(struct sk_buff *__skb)
