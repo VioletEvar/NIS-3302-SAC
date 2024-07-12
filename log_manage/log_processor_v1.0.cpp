@@ -221,7 +221,7 @@ void mergeMode(mysqlpp::Connection& conn) {
 
 
 void userHelp(){
-    std::cout << "输入相应操作符进行相关操作：" ;
+    std::cout << "欢迎使用日志资源管理模块，输入字符来使用相应功能：q--查询，s--排序，m--重复操作合并，a--退出。" << std::endl ;
     return ;
 }
 
