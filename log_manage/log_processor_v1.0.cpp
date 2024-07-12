@@ -258,7 +258,7 @@ int main() {
     while(std::getline(file, line)) {
         
         logEntries[i].status = extractLastItem(line);
-        logEntries[i].status.pop_back();
+        
         std::cout << "Last item :" << logEntries[i].status <<" " << logEntries[i].status.size() << std::endl;
         i++;
     }
