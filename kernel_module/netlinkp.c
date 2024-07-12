@@ -485,26 +485,151 @@ int AuditDeviceRemoveat(int dfd, char *pathname, int flags, int ret)
 }
 
 
-int AuditMount(char *pathname, int ret)
+int AuditMount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data, int ret)
 {
-    
+    char commandname[TASK_COMM_LEN];
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+
+    // 计算缓冲区大小
+    size = strlen(source) + strlen(target) + strlen(filesystemtype) + 32 + TASK_COMM_LEN + 1;
+    buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        printk(KERN_ERR "AuditMount: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    // 获取当前进程的命令名和凭据
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+
+    // 将信息写入缓冲区
+    *((int *)buffer) = cred->uid.val; // UID
+    *((int *)buffer + 1) = current->pid;
+    *((unsigned long *)buffer + 2) = mountflags;
+    *((int *)buffer + 3) = ret; // 返回值
+    strcpy((char *)(4 + (int *)buffer), commandname);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + (int *)buffer), source);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + strlen(source) + 1 + (int *)buffer), target);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + strlen(source) + strlen(target) + 2 + (int *)buffer), filesystemtype);
+
+    // 发送 netlink 消息
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
 }
 
-int AuditMountat(int dfd, char *pathname, int flags, int ret)
-{
 
+int AuditMount2(int dfd, const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data, int ret)
+{
+    char commandname[TASK_COMM_LEN];
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+
+    // 计算缓冲区大小
+    size = strlen(source) + strlen(target) + strlen(filesystemtype) + 36 + TASK_COMM_LEN + 1;
+    buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        printk(KERN_ERR "AuditMountat: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    // 获取当前进程的命令名和凭据
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+
+    // 将信息写入缓冲区
+    *((int *)buffer) = cred->uid.val; // UID
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = dfd; // Directory file descriptor
+    *((unsigned long *)buffer + 3) = mountflags;
+    *((int *)buffer + 4) = ret; // 返回值
+    strcpy((char *)(5 + (int *)buffer), commandname);
+    strcpy((char *)(5 + TASK_COMM_LEN / 4 + (int *)buffer), source);
+    strcpy((char *)(5 + TASK_COMM_LEN / 4 + strlen(source) + 1 + (int *)buffer), target);
+    strcpy((char *)(5 + TASK_COMM_LEN / 4 + strlen(source) + strlen(target) + 2 + (int *)buffer), filesystemtype);
+
+    // 发送 netlink 消息
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
 }
 
 
-int AuditUnmount(char *pathname, int ret)
+
+int AuditUnmount(const char *target, int flags, int ret)
 {
-    
+    char commandname[TASK_COMM_LEN];
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+
+    // 计算缓冲区大小
+    size = strlen(target) + 16 + TASK_COMM_LEN + 1;
+    buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        printk(KERN_ERR "AuditUnmount: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    // 获取当前进程的命令名和凭据
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+
+    // 将信息写入缓冲区
+    *((int *)buffer) = cred->uid.val; // UID
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = flags; // umount flags
+    *((int *)buffer + 3) = ret; // 返回值
+    strcpy((char *)(4 + (int *)buffer), commandname);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + (int *)buffer), target);
+
+    // 发送 netlink 消息
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
 }
 
-int AuditUnmountat(int dfd, char *pathname, int flags, int ret)
-{
 
+int AuditUnmount2(const char *target, int flags, int ret)
+{
+    char commandname[TASK_COMM_LEN];
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+
+    size = strlen(target) + 16 + TASK_COMM_LEN + 1;
+    buffer = kmalloc(size, 0);
+    if (!buffer) {
+        printk(KERN_ERR "AuditUnmount2: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+
+    *((int *)buffer) = cred->uid.val; // UID
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = flags;
+    *((int *)buffer + 3) = ret;
+    strcpy((char *)(4 + (int *)buffer), commandname);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + (int *)buffer), target);
+
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
 }
+
 
 
 int AuditHttp(char *pathname, int ret)

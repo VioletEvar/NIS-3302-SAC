@@ -35,6 +35,10 @@ typedef asmlinkage long (*orig_unlinkat_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_execve_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_execveat_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_reboot_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_mount_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_mount2_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_umount_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_umount2_t)(struct pt_regs *regs);
 
 demo_sys_call_ptr_t *get_syscall_table(void);
 
@@ -46,6 +50,10 @@ int AuditExec(const char *pathname, int ret);
 int AuditExecat(int dfd, const char *pathname, int flags, int ret);
 int AuditReboot(const char *message, int ret);
 int AuditShutdown(const char *message, int ret);
+int AuditMount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data, int ret);
+int AuditMount2(int dfd, const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data, int ret);
+int AuditUnmount(const char *target, int flags, int ret);
+int AuditUnmount2(const char *target, int flags, int ret);
 
 void netlink_release(void);
 void netlink_init(void);
@@ -58,6 +66,10 @@ orig_unlinkat_t orig_unlinkat = NULL;
 orig_execve_t orig_execve = NULL;
 orig_execveat_t orig_execveat = NULL;
 orig_reboot_t orig_reboot = NULL;
+orig_mount_t orig_mount = NULL;
+orig_mount_t orig_mount2 = NULL;
+orig_umount_t orig_umount = NULL;
+orig_umount_t orig_umount2 = NULL;
 unsigned int level;
 pte_t *pte;
 
@@ -196,13 +208,9 @@ asmlinkage long hooked_sys_reboot(struct pt_regs *regs)
 }
 
 
-
-
-
-
 asmlinkage long hooked_sys_insmod(struct pt_regs *regs)
 {
-
+    
 }
 
 asmlinkage long hooked_sys_insmodat(struct pt_regs *regs)
@@ -246,24 +254,99 @@ asmlinkage long hooked_sys_deviceremoveat(struct pt_regs *regs)
 
 asmlinkage long hooked_sys_mount(struct pt_regs *regs)
 {
+    char source[MAX_LENGTH];
+    char target[MAX_LENGTH];
+    char filesystemtype[MAX_LENGTH];
+    unsigned long mountflags;
+    const void *data;
+    int ret;
 
+    // 初始化缓冲区
+    memset(source, 0, MAX_LENGTH);
+    memset(target, 0, MAX_LENGTH);
+    memset(filesystemtype, 0, MAX_LENGTH);
+
+    // 从用户空间获取参数
+    strncpy_from_user(source, (const char __user *)regs->di, MAX_LENGTH); // source
+    strncpy_from_user(target, (const char __user *)regs->si, MAX_LENGTH); // target
+    strncpy_from_user(filesystemtype, (const char __user *)regs->dx, MAX_LENGTH); // filesystemtype
+    mountflags = regs->r10; // mountflags
+    data = (const void *)regs->r8; // data
+
+    // 调用原始的 mount 系统调用
+    ret = orig_mount(regs);
+
+    // 调用审计函数
+    AuditMount(source, target, filesystemtype, mountflags, data, ret);
+
+    return ret;
 }
 
-asmlinkage long hooked_sys_mountat(struct pt_regs *regs)
+asmlinkage long hooked_sys_mount2(struct pt_regs *regs)
 {
+    int dfd;
+    char source[MAX_LENGTH];
+    char target[MAX_LENGTH];
+    char filesystemtype[MAX_LENGTH];
+    unsigned long mountflags;
+    const void *data;
+    int ret;
 
+    // 初始化缓冲区
+    memset(source, 0, MAX_LENGTH);
+    memset(target, 0, MAX_LENGTH);
+    memset(filesystemtype, 0, MAX_LENGTH);
+
+    // 从用户空间获取参数
+    dfd = regs->di; // dfd
+    strncpy_from_user(source, (const char __user *)regs->si, MAX_LENGTH); // source
+    strncpy_from_user(target, (const char __user *)regs->dx, MAX_LENGTH); // target
+    strncpy_from_user(filesystemtype, (const char __user *)regs->r10, MAX_LENGTH); // filesystemtype
+    mountflags = regs->r8; // mountflags
+    data = (const void *)regs->r9; // data
+
+    // 调用原始的 mountat 系统调用
+    ret = orig_mountat(regs);
+
+    // 调用审计函数
+    AuditMountat(dfd, source, target, filesystemtype, mountflags, data, ret);
+
+    return ret;
 }
 
 
-asmlinkage long hooked_sys_unmount(struct pt_regs *regs)
+asmlinkage long hooked_sys_umount(struct pt_regs *regs)
 {
+    char target[MAX_LENGTH];
+    int ret;
 
+    memset(target, 0, MAX_LENGTH);
+    strncpy_from_user(target, (const char __user *)regs->di, MAX_LENGTH);
+
+    ret = orig_umount(regs);
+
+    AuditUnmount(target, 0, ret); // flags 为 0
+
+    return ret;
 }
 
-asmlinkage long hooked_sys_unmountat(struct pt_regs *regs)
+asmlinkage long hooked_sys_umount2(struct pt_regs *regs)
 {
+    char target[MAX_LENGTH];
+    int flags;
+    int ret;
 
+    memset(target, 0, MAX_LENGTH);
+    strncpy_from_user(target, (const char __user *)regs->di, MAX_LENGTH);
+    flags = regs->si; // flags
+
+    ret = orig_umount2(regs);
+
+    AuditUnmount(target, flags, ret);
+
+    return ret;
 }
+
 
 
 asmlinkage long hooked_sys_http(struct pt_regs *regs)
@@ -323,6 +406,11 @@ static int __init audit_init(void)
     orig_execve = (orig_execve_t)sys_call_table[__NR_execve];
     orig_execveat = (orig_execveat_t)sys_call_table[__NR_execveat];
     orig_reboot = (orig_reboot_t)sys_call_table[__NR_reboot];
+    orig_mount = (orig_mount_t)sys_call_table[__NR_mount];
+    orig_mountat = (orig_mount2_t)sys_call_table[__NR_mount2];
+    orig_umount = (orig_umount_t)sys_call_table[__NR_umount];
+    orig_umount2 = (orig_umount2_t)sys_call_table[__NR_umount2];
+
 
     pte = lookup_address((unsigned long)sys_call_table, &level);
     set_pte_atomic(pte, pte_mkwrite(*pte));
@@ -335,6 +423,10 @@ static int __init audit_init(void)
     sys_call_table[__NR_execve] = (demo_sys_call_ptr_t)hooked_sys_execve;
     sys_call_table[__NR_execveat] = (demo_sys_call_ptr_t)hooked_sys_execveat;
     sys_call_table[__NR_reboot] = (demo_sys_call_ptr_t)hooked_sys_reboot;
+    sys_call_table[__NR_mount] = (demo_sys_call_ptr_t)hooked_sys_mount;
+    sys_call_table[__NR_mount2] = (demo_sys_call_ptr_t)hooked_sys_mount2;
+    sys_call_table[__NR_umount] = (demo_sys_call_ptr_t)hooked_sys_umount;
+    sys_call_table[__NR_umount2] = (demo_sys_call_ptr_t)hooked_sys_umount2;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
     printk("Info: sys_call_table hooked!\n");
@@ -355,6 +447,10 @@ static void __exit audit_exit(void)
     sys_call_table[__NR_execve] = (demo_sys_call_ptr_t)orig_execve;
     sys_call_table[__NR_execveat] = (demo_sys_call_ptr_t)orig_execveat;
     sys_call_table[__NR_reboot] = (demo_sys_call_ptr_t)orig_reboot;
+    sys_call_table[__NR_mount] = (demo_sys_call_ptr_t)orig_mount;
+    sys_call_table[__NR_mountat] = (demo_sys_call_ptr_t)orig_mount2;
+    sys_call_table[__NR_umount] = (demo_sys_call_ptr_t)orig_umount;
+    sys_call_table[__NR_umount2] = (demo_sys_call_ptr_t)orig_umount2;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
 
