@@ -80,7 +80,7 @@ void insertLogEntries(mysqlpp::Connection& conn, const std::vector<LogEntry>& lo
         mysqlpp::Query query = conn.query();
         query << "INSERT INTO log_entries (username, uid, operation, operation_id, time, file_path, details, status) " << "VALUES (%0q, %1, %2q, %3, %4q, %5q, %6q, %7q)";
         query.parse();
-        try {query.execute(entry.username, entry.uid, entry.operation, entry.operation_id, entry.time, 	entry.file_path, entry.details, entry.status);}、
+        try {query.execute(entry.username, entry.uid, entry.operation, entry.operation_id, entry.time, 	entry.file_path, entry.details, entry.status);}
         catch (const mysqlpp::BadQuery& e) {std::cerr << "Query error: " << e.what() << std::endl;} 
         catch (const mysqlpp::Exception& e) {std::cerr << "Error: " << e.what() << std::endl;}
     }
