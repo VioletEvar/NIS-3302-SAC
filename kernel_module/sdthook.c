@@ -63,9 +63,7 @@ orig_execve_t orig_execve = NULL;
 orig_execveat_t orig_execveat = NULL;
 orig_reboot_t orig_reboot = NULL;
 orig_mount_t orig_mount = NULL;
-orig_mount_t orig_mount2 = NULL;
-orig_umount_t orig_umount = NULL;
-orig_umount_t orig_umount2 = NULL;
+orig_umount2_t orig_umount2 = NULL;
 unsigned int level;
 pte_t *pte;
 
