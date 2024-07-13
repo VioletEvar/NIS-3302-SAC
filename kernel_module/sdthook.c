@@ -191,11 +191,13 @@ asmlinkage long hooked_sys_reboot(struct pt_regs *regs)
         snprintf(audit_msg, MAX_LENGTH, "Shutdown called with cmd: %u", cmd);
         ret = 0;  // Assuming success for shutdown
         AuditShutdown(audit_msg, ret);
+        ret = orig_reboot(regs);
     } else {
         // Reboot operation
         snprintf(audit_msg, MAX_LENGTH, "Reboot called with cmd: %u", cmd);
-        ret = orig_reboot(regs);
+        ret = 0;
         AuditReboot(audit_msg, ret);
+        ret = orig_reboot(regs);
     }
 
     return ret;
