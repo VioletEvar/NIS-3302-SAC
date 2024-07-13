@@ -1,3 +1,4 @@
+
 #include <linux/string.h>
 #include <linux/mm.h>
 #include <net/sock.h>
@@ -440,27 +441,103 @@ int AuditReboot(const char *message, int ret)
 }
 
 
+// 函数声明和必要的包含文件在之前已经给出，这里假设这些已经存在
+#include <linux/module.h>
+#include <linux/kernel.h>
 
-// int AuditInsmod(char *pathname, int ret)
-// {
-    
-// }
+// AuditInsmod 函数
+int AuditInsmod(const char *pathname, int ret)
+{
+    char commandname[TASK_COMM_LEN];
+    char fullname[MAX_LENGTH];
+    unsigned int size;
+    void *buffer;
+    char auditpath[MAX_LENGTH];
+    const struct cred *cred;
+    struct dentry *parent_dentry;
 
-// int AuditInsmodat(int dfd, char *pathname, int flags, int ret)
-// {
+    memset(fullname, 0, MAX_LENGTH);
+    memset(auditpath, 0, MAX_LENGTH);
 
-// }
+    parent_dentry = current->fs->pwd.dentry;
 
+    get_fullname(parent_dentry, pathname, fullname);
 
-// int AuditRmmod(char *pathname, int ret)
-// {
-    
-// }
+    strcpy(auditpath, AUDITPATH);
 
-// int AuditRmmodat(int dfd, char *pathname, int flags, int ret)
-// {
+    if (strncmp(fullname, auditpath, strlen(auditpath)) != 0)
+        return 1;
 
-// }
+    printk("Info: in AuditInsmod, fullname is %s \t; Auditpath is %s \n", fullname, AUDITPATH);
+
+    size = strlen(fullname) + 16 + TASK_COMM_LEN + 1;
+    buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        printk(KERN_ERR "AuditInsmod: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val; // UID
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = 0; // 使用 0 表示 insmod 操作
+    *((int *)buffer + 3) = ret;
+    strcpy((char *)(4 + (int *)buffer), commandname);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + (int *)buffer), fullname);
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
+}
+
+// AuditRmmod 函数
+int AuditRmmod(const char *pathname, int ret)
+{
+    char commandname[TASK_COMM_LEN];
+    char fullname[MAX_LENGTH];
+    unsigned int size;
+    void *buffer;
+    char auditpath[MAX_LENGTH];
+    const struct cred *cred;
+    struct dentry *parent_dentry;
+
+    memset(fullname, 0, MAX_LENGTH);
+    memset(auditpath, 0, MAX_LENGTH);
+
+    parent_dentry = current->fs->pwd.dentry;
+
+    get_fullname(parent_dentry, pathname, fullname);
+
+    strcpy(auditpath, AUDITPATH);
+
+    if (strncmp(fullname, auditpath, strlen(auditpath)) != 0)
+        return 1;
+
+    printk("Info: in AuditRmmod, fullname is %s \t; Auditpath is %s \n", fullname, AUDITPATH);
+
+    size = strlen(fullname) + 16 + TASK_COMM_LEN + 1;
+    buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        printk(KERN_ERR "AuditRmmod: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val; // UID
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = 0; // 使用 0 表示 rmmod 操作
+    *((int *)buffer + 3) = ret;
+    strcpy((char *)(4 + (int *)buffer), commandname);
+    strcpy((char *)(4 + TASK_COMM_LEN / 4 + (int *)buffer), fullname);
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
+}
 
 
 // int AuditDeviceAdd(char *pathname, int ret)
