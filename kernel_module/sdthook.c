@@ -1,3 +1,4 @@
+
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
 #endif
@@ -37,6 +38,8 @@ typedef asmlinkage long (*orig_execveat_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_reboot_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_mount_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_umount2_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_insmod_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_rmmod_t)(struct pt_regs *regs);
 
 demo_sys_call_ptr_t *get_syscall_table(void);
 
@@ -50,6 +53,8 @@ int AuditReboot(const char *message, int ret);
 int AuditShutdown(const char *message, int ret);
 int AuditMount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data, int ret);
 int AuditUnmount2(const char *target, int flags, int ret);
+int AuditInsmod(const char *pathname, int ret);
+int AuditRmmod(const char *module_name, int ret);
 
 void netlink_release(void);
 void netlink_init(void);
@@ -64,6 +69,8 @@ orig_execveat_t orig_execveat = NULL;
 orig_reboot_t orig_reboot = NULL;
 orig_mount_t orig_mount = NULL;
 orig_umount2_t orig_umount2 = NULL;
+orig_insmod_t orig_insmod = NULL;
+orig_rmmod_t orig_rmmod = NULL;
 unsigned int level;
 pte_t *pte;
 
@@ -191,39 +198,49 @@ asmlinkage long hooked_sys_reboot(struct pt_regs *regs)
         snprintf(audit_msg, MAX_LENGTH, "Shutdown called with cmd: %u", cmd);
         ret = 0;  // Assuming success for shutdown
         AuditShutdown(audit_msg, ret);
-        ret = orig_reboot(regs);
     } else {
         // Reboot operation
         snprintf(audit_msg, MAX_LENGTH, "Reboot called with cmd: %u", cmd);
-        ret = 0;
-        AuditReboot(audit_msg, ret);
         ret = orig_reboot(regs);
+        AuditReboot(audit_msg, ret);
     }
 
     return ret;
 }
 
 
-// asmlinkage long hooked_sys_insmod(struct pt_regs *regs)
-// {
-    
-// }
+asmlinkage long hooked_sys_insmod(struct pt_regs *regs)
+{
+    char pathname[MAX_LENGTH];
+    int nbytes;
+    int ret;
 
-// asmlinkage long hooked_sys_insmodat(struct pt_regs *regs)
-// {
+    memset(pathname, 0, MAX_LENGTH);
+    nbytes = strncpy_from_user(pathname, (const char __user *)(regs->di), MAX_LENGTH); // regs->di:pathname
 
-// }
+    ret = orig_insmod(regs);
 
+    AuditInsmod(pathname, ret);
 
-// asmlinkage long hooked_sys_rmmod(struct pt_regs *regs)
-// {
+    return ret;
+}
 
-// }
+asmlinkage long hooked_sys_rmmod(struct pt_regs *regs)
+{
+    char module_name[MAX_LENGTH];
+    int nbytes;
+    int ret;
 
-// asmlinkage long hooked_sys_rmmodat(struct pt_regs *regs)
-// {
+    memset(module_name, 0, MAX_LENGTH);
+    nbytes = strncpy_from_user(module_name, (const char __user *)(regs->di), MAX_LENGTH); // regs->di:module_name
 
-// }
+    ret = orig_rmmod(regs);
+
+    AuditRmmod(module_name, ret);
+
+    return ret;
+}
+
 
 
 // asmlinkage long hooked_sys_deviceadd(struct pt_regs *regs)
@@ -358,7 +375,8 @@ static int __init audit_init(void)
     orig_reboot = (orig_reboot_t)sys_call_table[__NR_reboot];
     orig_mount = (orig_mount_t)sys_call_table[__NR_mount];
     orig_umount2 = (orig_umount2_t)sys_call_table[__NR_umount2];
-
+    orig_insmod = (orig_insmod_t)sys_call_table[__NR_init_module];
+    orig_rmmod = (orig_rmmod_t)sys_call_table[__NR_delete_module];
 
     pte = lookup_address((unsigned long)sys_call_table, &level);
     set_pte_atomic(pte, pte_mkwrite(*pte));
@@ -373,6 +391,8 @@ static int __init audit_init(void)
     sys_call_table[__NR_reboot] = (demo_sys_call_ptr_t)hooked_sys_reboot;
     sys_call_table[__NR_mount] = (demo_sys_call_ptr_t)hooked_sys_mount;
     sys_call_table[__NR_umount2] = (demo_sys_call_ptr_t)hooked_sys_umount2;
+    sys_call_table[__NR_init_module] = (demo_sys_call_ptr_t)hooked_sys_insmod;
+    sys_call_table[__NR_delete_module] = (demo_sys_call_ptr_t)hooked_sys_rmmod;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
     printk("Info: sys_call_table hooked!\n");
@@ -395,6 +415,8 @@ static void __exit audit_exit(void)
     sys_call_table[__NR_reboot] = (demo_sys_call_ptr_t)orig_reboot;
     sys_call_table[__NR_mount] = (demo_sys_call_ptr_t)orig_mount;
     sys_call_table[__NR_umount2] = (demo_sys_call_ptr_t)orig_umount2;
+    sys_call_table[__NR_init_module] = (demo_sys_call_ptr_t)hooked_sys_insmod;
+    sys_call_table[__NR_delete_module] = (demo_sys_call_ptr_t)hooked_sys_rmmod;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
 
