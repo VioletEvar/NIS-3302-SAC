@@ -254,6 +254,7 @@ asmlinkage long hooked_sys_mount(struct pt_regs *regs)
     unsigned long mountflags;
     const void *data;
     int ret;
+    int nbytes;
 
     // 初始化缓冲区
     memset(source, 0, MAX_LENGTH);
@@ -261,9 +262,9 @@ asmlinkage long hooked_sys_mount(struct pt_regs *regs)
     memset(filesystemtype, 0, MAX_LENGTH);
 
     // 从用户空间获取参数
-    strncpy_from_user(source, (const char __user *)regs->di, MAX_LENGTH); // source
-    strncpy_from_user(target, (const char __user *)regs->si, MAX_LENGTH); // target
-    strncpy_from_user(filesystemtype, (const char __user *)regs->dx, MAX_LENGTH); // filesystemtype
+    nbytes = strncpy_from_user(source, (const char __user *)regs->di, MAX_LENGTH); // source
+    nbytes = strncpy_from_user(target, (const char __user *)regs->si, MAX_LENGTH); // target
+    nbytes = strncpy_from_user(filesystemtype, (const char __user *)regs->dx, MAX_LENGTH); // filesystemtype
     mountflags = regs->r10; // mountflags
     data = (const void *)regs->r8; // data
 
@@ -281,9 +282,10 @@ asmlinkage long hooked_sys_umount2(struct pt_regs *regs)
     char target[MAX_LENGTH];
     int flags;
     int ret;
+    int nbytes;
 
     memset(target, 0, MAX_LENGTH);
-    strncpy_from_user(target, (const char __user *)regs->di, MAX_LENGTH);
+    nbytes = strncpy_from_user(target, (const char __user *)regs->di, MAX_LENGTH);
     flags = regs->si; // flags
 
     ret = orig_umount2(regs);

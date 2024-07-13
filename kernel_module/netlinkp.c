@@ -44,7 +44,7 @@ int netlink_sendmsg(const void *buffer, unsigned int size)
 }
 
 
-int get_fullname(struct dentry *parent_dentry,char *pathname,char *fullname)
+int get_fullname(struct dentry *parent_dentry,const char *pathname,char *fullname)
 {
 	char buf[MAX_LENGTH];
     char *filestart=NULL;
