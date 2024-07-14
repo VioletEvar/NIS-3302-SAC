@@ -61,12 +61,12 @@ int AuditMount(const char *source, const char *target, const char *filesystemtyp
 int AuditUnmount2(const char *target, int flags, int ret);
 int AuditInsmod(const char *pathname, int ret);
 int AuditRmmod(const char *module_name, int ret);
-int AuditSocket(int domain, int type, int protocol, int ret);
-int AuditConnect(int sockfd, const struct sockaddr *addr, int addrlen, int ret);
-int AuditAccept(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int ret);
-int AuditSendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen, int ret);
-int AuditRecvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen, int ret);
-int AuditClose(int fd, int ret);
+int AuditSocket(int domain, int type, int protocol);
+int AuditConnect(int sockfd, struct sockaddr *addr, int addrlen);
+int AuditAccept(int sockfd, struct sockaddr *addr, int *addrlen);
+int AuditSendto(int sockfd, void *buf, size_t len, int flags, struct sockaddr *dest_addr, int addrlen);
+int AuditRecvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, int *addrlen);
+int AuditClose(int fd);
 
 void netlink_release(void);
 void netlink_init(void);
@@ -332,108 +332,84 @@ asmlinkage long hooked_sys_umount2(struct pt_regs *regs)
     return ret;
 }
 
-asmlinkage long hooked_sys_socket(struct pt_regs *regs) {
-    int domain = regs->di;    // First argument
-    int type = regs->si;      // Second argument
-    int protocol = regs->dx;  // Third argument
-    int ret;
+asmlinkage long hooked_sys_socket(struct pt_regs *regs)
+{
+    int domain = regs->di;
+    int type = regs->si;
+    int protocol = regs->dx;
 
-    ret = orig_socket(regs);  // Call the original socket system call
+    long ret = orig_socket(regs);
 
-    AuditSocket(domain, type, protocol, ret);  // Audit the socket call
-
-    return ret;
-}
-
-asmlinkage long hooked_sys_connect(struct pt_regs *regs) {
-    int sockfd = regs->di;      // First argument
-    struct sockaddr __user *addr = (struct sockaddr __user *)regs->si;  // Second argument
-    socklen_t addrlen = regs->dx;  // Third argument
-    struct sockaddr kaddr;
-    int ret;
-
-    if (copy_from_user(&kaddr, addr, addrlen))
-        return -EFAULT;
-
-    ret = orig_connect(regs);  // Call the original connect system call
-
-    AuditConnect(sockfd, &kaddr, addrlen, ret);  // Audit the connect call
+    AuditSocket(domain, type, protocol);
 
     return ret;
 }
 
-asmlinkage long hooked_sys_accept(struct pt_regs *regs) {
-    int sockfd = regs->di;      // First argument
-    struct sockaddr __user *addr = (struct sockaddr __user *)regs->si;  // Second argument
-    socklen_t __user *addrlen = (socklen_t __user *)regs->dx;  // Third argument
-    struct sockaddr kaddr;
-    socklen_t kaddrlen;
-    int ret;
+asmlinkage long hooked_sys_connect(struct pt_regs *regs)
+{
+    int sockfd = regs->di;
+    struct sockaddr *addr = (struct sockaddr *)regs->si;
+    int addrlen = regs->dx;
 
-    if (copy_from_user(&kaddrlen, addrlen, sizeof(socklen_t)))
-        return -EFAULT;
+    long ret = orig_connect(regs);
 
-    ret = orig_accept(regs);  // Call the original accept system call
-
-    if (copy_to_user(addr, &kaddr, kaddrlen))
-        return -EFAULT;
-
-    AuditAccept(sockfd, &kaddr, &kaddrlen, ret);  // Audit the accept call
+    AuditConnect(sockfd, addr, addrlen);
 
     return ret;
 }
 
-asmlinkage long hooked_sys_sendto(struct pt_regs *regs) {
-    int sockfd = regs->di;      // First argument
-    const void __user *buf = (const void __user *)regs->si;  // Second argument
-    size_t len = regs->dx;      // Third argument
-    int flags = regs->r10;      // Fourth argument
-    const struct sockaddr __user *dest_addr = (const struct sockaddr __user *)regs->r8;  // Fifth argument
-    socklen_t addrlen = regs->r9;  // Sixth argument
-    struct sockaddr kaddr;
-    int ret;
+asmlinkage long hooked_sys_accept(struct pt_regs *regs)
+{
+    int sockfd = regs->di;
+    struct sockaddr *addr = (struct sockaddr *)regs->si;
+    int *addrlen = (int *)regs->dx;
 
-    if (copy_from_user(&kaddr, dest_addr, addrlen))
-        return -EFAULT;
+    long ret = orig_accept(regs);
 
-    ret = orig_sendto(regs);  // Call the original sendto system call
-
-    AuditSendto(sockfd, buf, len, flags, &kaddr, addrlen, ret);  // Audit the sendto call
+    AuditAccept(sockfd, addr, addrlen);
 
     return ret;
 }
 
-asmlinkage long hooked_sys_recvfrom(struct pt_regs *regs) {
-    int sockfd = regs->di;      // First argument
-    void __user *buf = (void __user *)regs->si;  // Second argument
-    size_t len = regs->dx;      // Third argument
-    int flags = regs->r10;      // Fourth argument
-    struct sockaddr __user *src_addr = (struct sockaddr __user *)regs->r8;  // Fifth argument
-    socklen_t __user *addrlen = (socklen_t __user *)regs->r9;  // Sixth argument
-    struct sockaddr kaddr;
-    socklen_t kaddrlen;
-    int ret;
+asmlinkage long hooked_sys_sendto(struct pt_regs *regs)
+{
+    int sockfd = regs->di;
+    void *buf = (void *)regs->si;
+    size_t len = regs->dx;
+    int flags = regs->r10;
+    struct sockaddr *dest_addr = (struct sockaddr *)regs->r8;
+    int addrlen = regs->r9;
 
-    if (copy_from_user(&kaddrlen, addrlen, sizeof(socklen_t)))
-        return -EFAULT;
+    long ret = orig_sendto(regs);
 
-    ret = orig_recvfrom(regs);  // Call the original recvfrom system call
-
-    if (copy_to_user(src_addr, &kaddr, kaddrlen))
-        return -EFAULT;
-
-    AuditRecvfrom(sockfd, buf, len, flags, &kaddr, &kaddrlen, ret);  // Audit the recvfrom call
+    AuditSendto(sockfd, buf, len, flags, dest_addr, addrlen);
 
     return ret;
 }
 
-asmlinkage long hooked_sys_close(struct pt_regs *regs) {
-    int fd = regs->di;  // First argument
-    int ret;
+asmlinkage long hooked_sys_recvfrom(struct pt_regs *regs)
+{
+    int sockfd = regs->di;
+    void *buf = (void *)regs->si;
+    size_t len = regs->dx;
+    int flags = regs->r10;
+    struct sockaddr *src_addr = (struct sockaddr *)regs->r8;
+    int *addrlen = (int *)regs->r9;
 
-    ret = orig_close(regs);  // Call the original close system call
+    long ret = orig_recvfrom(regs);
 
-    AuditClose(fd, ret);  // Audit the close call
+    AuditRecvfrom(sockfd, buf, len, flags, src_addr, addrlen);
+
+    return ret;
+}
+
+asmlinkage long hooked_sys_close(struct pt_regs *regs)
+{
+    int fd = regs->di;
+
+    long ret = orig_close(regs);
+
+    AuditClose(fd);
 
     return ret;
 }
