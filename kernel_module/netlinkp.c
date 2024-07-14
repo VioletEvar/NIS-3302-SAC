@@ -632,48 +632,185 @@ int AuditUnmount2(const char *target, int flags, int ret)
 
 
 
-// int AuditHttp(char *pathname, int ret)
-// {
-    
-// }
+int AuditSocket(int domain, int type, int protocol, int ret) {
+    char commandname[TASK_COMM_LEN];
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
 
-// int AuditHttpat(int dfd, char *pathname, int flags, int ret)
-// {
+    size = 16 + TASK_COMM_LEN + 1; // Adjust size if needed
+    buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        printk(KERN_ERR "AuditSocket: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
 
-// }
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val; // uid
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = domain;
+    *((int *)buffer + 3) = type;
+    *((int *)buffer + 4) = protocol;
+    *((int *)buffer + 5) = ret;
+    strcpy((char *)(6 + (int *)buffer), commandname);
+
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
+}
+
+int AuditConnect(int sockfd, const struct sockaddr *addr, socklen_t addrlen, int ret) {
+    char commandname[TASK_COMM_LEN];
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+
+    size = 16 + TASK_COMM_LEN + 1; // Adjust size if needed
+    buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        printk(KERN_ERR "AuditConnect: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val; // uid
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = sockfd;
+    *((int *)buffer + 3) = addrlen;
+    *((int *)buffer + 4) = ret;
+    strcpy((char *)(5 + (int *)buffer), commandname);
+
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
+}
+
+int AuditAccept(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int ret) {
+    char commandname[TASK_COMM_LEN];
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+
+    size = 16 + TASK_COMM_LEN + 1; // Adjust size if needed
+    buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        printk(KERN_ERR "AuditAccept: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val; // uid
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = sockfd;
+    *((int *)buffer + 3) = *addrlen;
+    *((int *)buffer + 4) = ret;
+    strcpy((char *)(5 + (int *)buffer), commandname);
+
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
+}
+
+int AuditSendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen, int ret) {
+    char commandname[TASK_COMM_LEN];
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+
+    size = 16 + TASK_COMM_LEN + 1; // Adjust size if needed
+    buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        printk(KERN_ERR "AuditSendto: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val; // uid
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = sockfd;
+    *((int *)buffer + 3) = len;
+    *((int *)buffer + 4) = flags;
+    *((int *)buffer + 5) = addrlen;
+    *((int *)buffer + 6) = ret;
+    strcpy((char *)(7 + (int *)buffer), commandname);
+
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
+}
+
+int AuditRecvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen, int ret) {
+    char commandname[TASK_COMM_LEN];
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+
+    size = 16 + TASK_COMM_LEN + 1; // Adjust size if needed
+    buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        printk(KERN_ERR "AuditRecvfrom: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val; // uid
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = sockfd;
+    *((int *)buffer + 3) = len;
+    *((int *)buffer + 4) = flags;
+    *((int *)buffer + 5) = *addrlen;
+    *((int *)buffer + 6) = ret;
+    strcpy((char *)(7 + (int *)buffer), commandname);
+
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
+}
+
+int AuditClose(int fd, int ret) {
+    char commandname[TASK_COMM_LEN];
+    unsigned int size;
+    void *buffer;
+    const struct cred *cred;
+
+    size = 16 + TASK_COMM_LEN + 1; // Adjust size if needed
+    buffer = kmalloc(size, GFP_KERNEL);
+    if (!buffer) {
+        printk(KERN_ERR "AuditClose: kmalloc failed\n");
+        return -ENOMEM;
+    }
+    memset(buffer, 0, size);
+
+    strncpy(commandname, current->comm, TASK_COMM_LEN);
+    cred = current_cred();
+    *((int *)buffer) = cred->uid.val; // uid
+    *((int *)buffer + 1) = current->pid;
+    *((int *)buffer + 2) = fd;
+    *((int *)buffer + 3) = ret;
+    strcpy((char *)(4 + (int *)buffer), commandname);
+
+    netlink_sendmsg(buffer, size);
+    kfree(buffer);
+
+    return 0;
+}
 
 
-// int AuditFtp(char *pathname, int ret)
-// {
-    
-// }
-
-// int AuditFtpat(int dfd, char *pathname, int flags, int ret)
-// {
-
-// }
-
-
-// int AuditSsh(char *pathname, int ret)
-// {
-    
-// }
-
-// int AuditSshat(int dfd, char *pathname, int flags, int ret)
-// {
-
-// }
-
-
-// int AuditDatabase(char *pathname, int ret)
-// {
-    
-// }
-
-// int AuditDatabaseat(int dfd, char *pathname, int flags, int ret)
-// {
-
-// }
 
 
 void nl_data_ready(struct sk_buff *__skb)

@@ -37,10 +37,9 @@ void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
     else strcpy(operationresult,"failed");
 
     if (strcmp(commandname, "rm") == 0) {
-        strcpy(operationtype, "Delete");
+    strcpy(operationtype, "Delete");
     } 
-    else if (strcmp(commandname, "insmod") == 0 || strcmp(commandname, "rmmod") == 0)
-    {
+    else if (strcmp(commandname, "insmod") == 0 || strcmp(commandname, "rmmod") == 0) {
         strcpy(operationtype, "Module");
     }
     else if (strcmp(commandname, "reboot") == 0) {
@@ -55,6 +54,24 @@ void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
     else if (strcmp(commandname, "umount") == 0) {
         strcpy(operationtype, "Umount");
     }
+    else if (strcmp(commandname, "socket") == 0) {
+        strcpy(operationtype, "Socket");
+    }
+    else if (strcmp(commandname, "connect") == 0) {
+        strcpy(operationtype, "Connect");
+    }
+    else if (strcmp(commandname, "accept") == 0) {
+        strcpy(operationtype, "Accept");
+    }
+    else if (strcmp(commandname, "sendto") == 0) {
+        strcpy(operationtype, "Sendto");
+    }
+    else if (strcmp(commandname, "recvfrom") == 0) {
+        strcpy(operationtype, "Recvfrom");
+    }
+    else if (strcmp(commandname, "close") == 0) {
+        strcpy(operationtype, "Close");
+    }
     else if (flags == 524288) {
         strcpy(operationtype, "Execute");
     } 
@@ -64,6 +81,7 @@ void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
         else if (flags & O_RDWR) strcpy(operationtype, "Read/Write");
         else strcpy(operationtype, "Other");
     }
+
 
     time_t t=time(0);
     if (logfile == NULL)    return;

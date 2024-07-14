@@ -40,6 +40,12 @@ typedef asmlinkage long (*orig_mount_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_umount2_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_insmod_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_rmmod_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_socket_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_connect_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_accept_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_sendto_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_recvfrom_t)(struct pt_regs *regs);
+typedef asmlinkage long (*orig_close_t)(struct pt_regs *regs);
 
 demo_sys_call_ptr_t *get_syscall_table(void);
 
@@ -55,6 +61,12 @@ int AuditMount(const char *source, const char *target, const char *filesystemtyp
 int AuditUnmount2(const char *target, int flags, int ret);
 int AuditInsmod(const char *pathname, int ret);
 int AuditRmmod(const char *module_name, int ret);
+int AuditSocket(int domain, int type, int protocol, int ret);
+int AuditConnect(int sockfd, const struct sockaddr *addr, int addrlen, int ret);
+int AuditAccept(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int ret);
+int AuditSendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen, int ret);
+int AuditRecvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen, int ret);
+int AuditClose(int fd, int ret);
 
 void netlink_release(void);
 void netlink_init(void);
@@ -71,6 +83,12 @@ orig_mount_t orig_mount = NULL;
 orig_umount2_t orig_umount2 = NULL;
 orig_insmod_t orig_insmod = NULL;
 orig_rmmod_t orig_rmmod = NULL;
+orig_socket_t orig_socket = NULL;
+orig_connect_t orig_connect = NULL;
+orig_accept_t orig_accept = NULL;
+orig_sendto_t orig_sendto = NULL;
+orig_recvfrom_t orig_recvfrom = NULL;
+orig_close_t orig_close = NULL;
 unsigned int level;
 pte_t *pte;
 
@@ -314,50 +332,111 @@ asmlinkage long hooked_sys_umount2(struct pt_regs *regs)
     return ret;
 }
 
+asmlinkage long hooked_sys_socket(struct pt_regs *regs) {
+    int domain = regs->di;    // First argument
+    int type = regs->si;      // Second argument
+    int protocol = regs->dx;  // Third argument
+    int ret;
 
+    ret = orig_socket(regs);  // Call the original socket system call
 
-// asmlinkage long hooked_sys_http(struct pt_regs *regs)
-// {
+    AuditSocket(domain, type, protocol, ret);  // Audit the socket call
 
-// }
+    return ret;
+}
 
-// asmlinkage long hooked_sys_httpat(struct pt_regs *regs)
-// {
+asmlinkage long hooked_sys_connect(struct pt_regs *regs) {
+    int sockfd = regs->di;      // First argument
+    struct sockaddr __user *addr = (struct sockaddr __user *)regs->si;  // Second argument
+    socklen_t addrlen = regs->dx;  // Third argument
+    struct sockaddr kaddr;
+    int ret;
 
-// }
+    if (copy_from_user(&kaddr, addr, addrlen))
+        return -EFAULT;
 
+    ret = orig_connect(regs);  // Call the original connect system call
 
-// asmlinkage long hooked_sys_ftp(struct pt_regs *regs)
-// {
+    AuditConnect(sockfd, &kaddr, addrlen, ret);  // Audit the connect call
 
-// }
+    return ret;
+}
 
-// asmlinkage long hooked_sys_ftpat(struct pt_regs *regs)
-// {
+asmlinkage long hooked_sys_accept(struct pt_regs *regs) {
+    int sockfd = regs->di;      // First argument
+    struct sockaddr __user *addr = (struct sockaddr __user *)regs->si;  // Second argument
+    socklen_t __user *addrlen = (socklen_t __user *)regs->dx;  // Third argument
+    struct sockaddr kaddr;
+    socklen_t kaddrlen;
+    int ret;
 
-// }
+    if (copy_from_user(&kaddrlen, addrlen, sizeof(socklen_t)))
+        return -EFAULT;
 
+    ret = orig_accept(regs);  // Call the original accept system call
 
-// asmlinkage long hooked_sys_ssh(struct pt_regs *regs)
-// {
+    if (copy_to_user(addr, &kaddr, kaddrlen))
+        return -EFAULT;
 
-// }
+    AuditAccept(sockfd, &kaddr, &kaddrlen, ret);  // Audit the accept call
 
-// asmlinkage long hooked_sys_sshat(struct pt_regs *regs)
-// {
+    return ret;
+}
 
-// }
+asmlinkage long hooked_sys_sendto(struct pt_regs *regs) {
+    int sockfd = regs->di;      // First argument
+    const void __user *buf = (const void __user *)regs->si;  // Second argument
+    size_t len = regs->dx;      // Third argument
+    int flags = regs->r10;      // Fourth argument
+    const struct sockaddr __user *dest_addr = (const struct sockaddr __user *)regs->r8;  // Fifth argument
+    socklen_t addrlen = regs->r9;  // Sixth argument
+    struct sockaddr kaddr;
+    int ret;
 
+    if (copy_from_user(&kaddr, dest_addr, addrlen))
+        return -EFAULT;
 
-// asmlinkage long hooked_sys_database(struct pt_regs *regs)
-// {
+    ret = orig_sendto(regs);  // Call the original sendto system call
 
-// }
+    AuditSendto(sockfd, buf, len, flags, &kaddr, addrlen, ret);  // Audit the sendto call
 
-// asmlinkage long hooked_sys_databaseat(struct pt_regs *regs)
-// {
+    return ret;
+}
 
-// }
+asmlinkage long hooked_sys_recvfrom(struct pt_regs *regs) {
+    int sockfd = regs->di;      // First argument
+    void __user *buf = (void __user *)regs->si;  // Second argument
+    size_t len = regs->dx;      // Third argument
+    int flags = regs->r10;      // Fourth argument
+    struct sockaddr __user *src_addr = (struct sockaddr __user *)regs->r8;  // Fifth argument
+    socklen_t __user *addrlen = (socklen_t __user *)regs->r9;  // Sixth argument
+    struct sockaddr kaddr;
+    socklen_t kaddrlen;
+    int ret;
+
+    if (copy_from_user(&kaddrlen, addrlen, sizeof(socklen_t)))
+        return -EFAULT;
+
+    ret = orig_recvfrom(regs);  // Call the original recvfrom system call
+
+    if (copy_to_user(src_addr, &kaddr, kaddrlen))
+        return -EFAULT;
+
+    AuditRecvfrom(sockfd, buf, len, flags, &kaddr, &kaddrlen, ret);  // Audit the recvfrom call
+
+    return ret;
+}
+
+asmlinkage long hooked_sys_close(struct pt_regs *regs) {
+    int fd = regs->di;  // First argument
+    int ret;
+
+    ret = orig_close(regs);  // Call the original close system call
+
+    AuditClose(fd, ret);  // Audit the close call
+
+    return ret;
+}
 
 
 
@@ -377,6 +456,14 @@ static int __init audit_init(void)
     orig_umount2 = (orig_umount2_t)sys_call_table[__NR_umount2];
     orig_insmod = (orig_insmod_t)sys_call_table[__NR_init_module];
     orig_rmmod = (orig_rmmod_t)sys_call_table[__NR_delete_module];
+    
+    // Adding network related syscalls
+    orig_socket = (orig_socket_t)sys_call_table[__NR_socket];
+    orig_connect = (orig_connect_t)sys_call_table[__NR_connect];
+    orig_accept = (orig_accept_t)sys_call_table[__NR_accept];
+    orig_sendto = (orig_sendto_t)sys_call_table[__NR_sendto];
+    orig_recvfrom = (orig_recvfrom_t)sys_call_table[__NR_recvfrom];
+    orig_close = (orig_close_t)sys_call_table[__NR_close];
 
     pte = lookup_address((unsigned long)sys_call_table, &level);
     set_pte_atomic(pte, pte_mkwrite(*pte));
@@ -393,6 +480,14 @@ static int __init audit_init(void)
     sys_call_table[__NR_umount2] = (demo_sys_call_ptr_t)hooked_sys_umount2;
     sys_call_table[__NR_init_module] = (demo_sys_call_ptr_t)hooked_sys_insmod;
     sys_call_table[__NR_delete_module] = (demo_sys_call_ptr_t)hooked_sys_rmmod;
+
+    // Hooking network related syscalls
+    sys_call_table[__NR_socket] = (demo_sys_call_ptr_t)hooked_sys_socket;
+    sys_call_table[__NR_connect] = (demo_sys_call_ptr_t)hooked_sys_connect;
+    sys_call_table[__NR_accept] = (demo_sys_call_ptr_t)hooked_sys_accept;
+    sys_call_table[__NR_sendto] = (demo_sys_call_ptr_t)hooked_sys_sendto;
+    sys_call_table[__NR_recvfrom] = (demo_sys_call_ptr_t)hooked_sys_recvfrom;
+    sys_call_table[__NR_close] = (demo_sys_call_ptr_t)hooked_sys_close;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
     printk("Info: sys_call_table hooked!\n");
@@ -415,8 +510,16 @@ static void __exit audit_exit(void)
     sys_call_table[__NR_reboot] = (demo_sys_call_ptr_t)orig_reboot;
     sys_call_table[__NR_mount] = (demo_sys_call_ptr_t)orig_mount;
     sys_call_table[__NR_umount2] = (demo_sys_call_ptr_t)orig_umount2;
-    sys_call_table[__NR_init_module] = (demo_sys_call_ptr_t)hooked_sys_insmod;
-    sys_call_table[__NR_delete_module] = (demo_sys_call_ptr_t)hooked_sys_rmmod;
+    sys_call_table[__NR_init_module] = (demo_sys_call_ptr_t)orig_insmod;
+    sys_call_table[__NR_delete_module] = (demo_sys_call_ptr_t)orig_rmmod;
+
+    // Unhooking network related syscalls
+    sys_call_table[__NR_socket] = (demo_sys_call_ptr_t)orig_socket;
+    sys_call_table[__NR_connect] = (demo_sys_call_ptr_t)orig_connect;
+    sys_call_table[__NR_accept] = (demo_sys_call_ptr_t)orig_accept;
+    sys_call_table[__NR_sendto] = (demo_sys_call_ptr_t)orig_sendto;
+    sys_call_table[__NR_recvfrom] = (demo_sys_call_ptr_t)orig_recvfrom;
+    sys_call_table[__NR_close] = (demo_sys_call_ptr_t)orig_close;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
 
