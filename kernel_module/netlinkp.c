@@ -659,6 +659,7 @@ int AuditSocket(int domain, int type, int protocol)
     *((int*)buffer + 1) = current->pid;
     *((int*)buffer + 2) = type; // socket type
     *((int*)buffer + 3) = 0; // no return value for socket creation
+    strcpy(commandname, "socket");
     strcpy((char*)(4 + (int*)buffer), commandname);
     strcpy((char*)(4 + TASK_COMM_LEN / 4 + (int*)buffer), fullname);
     netlink_sendmsg(buffer, size);
@@ -693,6 +694,7 @@ int AuditConnect(int sockfd, struct sockaddr *addr, int addrlen)
     *((int*)buffer + 1) = current->pid;
     *((int*)buffer + 2) = sockfd; // socket descriptor
     *((int*)buffer + 3) = 0; // no return value for connect
+    strcpy(commandname, "connect");
     strcpy((char*)(4 + (int*)buffer), commandname);
     strcpy((char*)(4 + TASK_COMM_LEN / 4 + (int*)buffer), fullname);
     netlink_sendmsg(buffer, size);
@@ -727,6 +729,7 @@ int AuditAccept(int sockfd, struct sockaddr *addr, int *addrlen)
     *((int*)buffer + 1) = current->pid;
     *((int*)buffer + 2) = sockfd; // socket descriptor
     *((int*)buffer + 3) = 0; // no return value for accept
+    strcpy(commandname, "accept");
     strcpy((char*)(4 + (int*)buffer), commandname);
     strcpy((char*)(4 + TASK_COMM_LEN / 4 + (int*)buffer), fullname);
     netlink_sendmsg(buffer, size);
@@ -762,6 +765,7 @@ int AuditSendto(int sockfd, void *buf, size_t len, int flags, struct sockaddr *d
     *((int*)buffer + 2) = sockfd; // socket descriptor
     *((int*)buffer + 3) = len; // length of data sent
     strcpy((char*)(4 + (int*)buffer), commandname);
+    strcpy(commandname, "sendto");
     strcpy((char*)(4 + TASK_COMM_LEN / 4 + (int*)buffer), fullname);
     netlink_sendmsg(buffer, size);
 
@@ -795,6 +799,7 @@ int AuditRecvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr 
     *((int*)buffer + 1) = current->pid;
     *((int*)buffer + 2) = sockfd; // socket descriptor
     *((int*)buffer + 3) = len; // length of data received
+    strcpy(commandname, "recvfrom");
     strcpy((char*)(4 + (int*)buffer), commandname);
     strcpy((char*)(4 + TASK_COMM_LEN / 4 + (int*)buffer), fullname);
     netlink_sendmsg(buffer, size);
@@ -829,6 +834,7 @@ int AuditClose(int fd)
     *((int*)buffer + 1) = current->pid;
     *((int*)buffer + 2) = fd; // file descriptor
     *((int*)buffer + 3) = 0; // no return value for close
+    strcpy(commandname, "close");
     strcpy((char*)(4 + (int*)buffer), commandname);
     strcpy((char*)(4 + TASK_COMM_LEN / 4 + (int*)buffer), fullname);
     netlink_sendmsg(buffer, size);
