@@ -25,6 +25,11 @@ struct iovec iov;
 
 FILE *logfile;
 
+int starts_with(const char *file_path, const char *prefix) {
+    size_t prefix_len = strlen(prefix);
+    return strncmp(file_path, prefix, prefix_len) == 0;
+}
+
 void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
 {
     char logtime[64];
@@ -32,6 +37,10 @@ void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
     struct passwd *pwinfo;
     char operationresult[10];
     char operationtype[16];
+
+    if(starts_with(file_path, "/home/szy/Desktop/test")==0) {
+        return;
+    }
 
     if (ret >= 0) strcpy(operationresult,"success");
     else strcpy(operationresult,"failed");
@@ -170,6 +179,11 @@ int main(int argc, char *argv[]){
         char * commandname;
 
         recvmsg(sock_fd, &msg, 0);
+
+        file_path = (char *)( 4 + 16/4 + (int *)NLMSG_DATA(nlh));
+        if(starts_with(file_path, "/home/szy/Desktop/test")==0) {
+            continue;
+        }
 
         uid = *( (unsigned int *)NLMSG_DATA(nlh) );
         printf("uid: %d \n",uid);
