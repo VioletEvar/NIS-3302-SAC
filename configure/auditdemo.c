@@ -17,6 +17,7 @@
 
 #define NETLINK_TEST 29
 #define MAX_PAYLOAD 1024  /* maximum payload size*/
+#define AUDITPATH "/home/wbw/Desktop/test"
 int sock_fd;
 struct msghdr msg;
 struct nlmsghdr *nlh = NULL;
@@ -38,7 +39,7 @@ void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
     char operationresult[10];
     char operationtype[16];
 
-    if(starts_with(file_path, "/home/szy/Desktop/test")==0) {
+    if(starts_with(file_path, AUDITPATH)==0) {
         return;
     }
 
@@ -181,7 +182,7 @@ int main(int argc, char *argv[]){
         recvmsg(sock_fd, &msg, 0);
 
         file_path = (char *)( 4 + 16/4 + (int *)NLMSG_DATA(nlh));
-        if(starts_with(file_path, "/home/szy/Desktop/test")==0) {
+        if(starts_with(file_path, AUDITPATH)==0) {
             continue;
         }
 
