@@ -260,29 +260,6 @@ asmlinkage long hooked_sys_rmmod(struct pt_regs *regs)
 }
 
 
-
-// asmlinkage long hooked_sys_deviceadd(struct pt_regs *regs)
-// {
-
-// }
-
-// asmlinkage long hooked_sys_deviceaddat(struct pt_regs *regs)
-// {
-
-// }
-
-
-// asmlinkage long hooked_sys_deviceremove(struct pt_regs *regs)
-// {
-
-// }
-
-// asmlinkage long hooked_sys_deviceremoveat(struct pt_regs *regs)
-// {
-
-// }
-
-
 asmlinkage long hooked_sys_mount(struct pt_regs *regs)
 {
     char source[MAX_LENGTH];
