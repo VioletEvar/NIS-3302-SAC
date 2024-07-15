@@ -69,10 +69,12 @@ int main() {
             if (close_time != "running") {
                 iss1 >> span;
                 operationtype = "Boot";
+                commandname = "boot";
                 operationresult = "Completed";
                 fprintf(logfile, "%s(%d) %s(%d) %s \"%s\" %s %s\n", username.c_str(), uid, commandname.c_str(), pid, logtime.c_str(), file_path.c_str(), operationtype.c_str(), operationresult.c_str());
             } else {
                 operationtype = "Boot";
+                commandname = "boot";
                 operationresult = "Still_running";
                 fprintf(logfile, "%s(%d) %s(%d) %s \"%s\" %s %s\n", username.c_str(), uid, commandname.c_str(), pid, logtime.c_str(), file_path.c_str(), operationtype.c_str(), operationresult.c_str());
             }
@@ -80,6 +82,7 @@ int main() {
         if (iss2 >> placeholder >> placeholder >> placeholder >> placeholder >> week >> month >> day >> close_time >> placeholder >> boot_time >> span) {
             string logtime = formatTime(2024, month, day, close_time); // Assuming current year is 2024
             operationtype = "Shutdown";
+            commandname = "shutdown";
             operationresult = "Completed";
             fprintf(logfile, "%s(%d) %s(%d) %s \"%s\" %s %s\n", username.c_str(), uid, commandname.c_str(), pid, logtime.c_str(), file_path.c_str(), operationtype.c_str(), operationresult.c_str());
         }
