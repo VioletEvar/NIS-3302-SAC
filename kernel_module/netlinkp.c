@@ -807,40 +807,40 @@ int AuditRecvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr 
     return 0;
 }
 
-int AuditClose(int fd)
-{
-    char commandname[TASK_COMM_LEN];
-    char fullname[MAX_LENGTH];
-    unsigned int size;
-    void * buffer;
-    const struct cred *cred;
-    struct dentry *parent_dentry;
+// int AuditClose(int fd)
+// {
+//     char commandname[TASK_COMM_LEN];
+//     char fullname[MAX_LENGTH];
+//     unsigned int size;
+//     void * buffer;
+//     const struct cred *cred;
+//     struct dentry *parent_dentry;
 
-    memset(fullname, 0, MAX_LENGTH);
+//     memset(fullname, 0, MAX_LENGTH);
 
-    parent_dentry = current->fs->pwd.dentry;
+//     parent_dentry = current->fs->pwd.dentry;
 
-    get_fullname(parent_dentry, "", fullname); // Assuming close operations do not have a pathname like files
+//     get_fullname(parent_dentry, "", fullname); // Assuming close operations do not have a pathname like files
 
-    printk("Info: in AuditClose; fullname is %s\n", fullname);
+//     printk("Info: in AuditClose; fullname is %s\n", fullname);
 
-    size = strlen(fullname) + 16 + TASK_COMM_LEN + 1;
-    buffer = kmalloc(size, 0);
-    memset(buffer, 0, size);
+//     size = strlen(fullname) + 16 + TASK_COMM_LEN + 1;
+//     buffer = kmalloc(size, 0);
+//     memset(buffer, 0, size);
 
-    strncpy(commandname, current->comm, TASK_COMM_LEN);
-    cred = current_cred();
-    *((int*)buffer) = cred->uid.val; //uid
-    *((int*)buffer + 1) = current->pid;
-    *((int*)buffer + 2) = fd; // file descriptor
-    *((int*)buffer + 3) = 0; // no return value for close
-    strcpy(commandname, "close");
-    strcpy((char*)(4 + (int*)buffer), commandname);
-    strcpy((char*)(4 + TASK_COMM_LEN / 4 + (int*)buffer), fullname);
-    netlink_sendmsg(buffer, size);
+//     strncpy(commandname, current->comm, TASK_COMM_LEN);
+//     cred = current_cred();
+//     *((int*)buffer) = cred->uid.val; //uid
+//     *((int*)buffer + 1) = current->pid;
+//     *((int*)buffer + 2) = fd; // file descriptor
+//     *((int*)buffer + 3) = 0; // no return value for close
+//     strcpy(commandname, "close");
+//     strcpy((char*)(4 + (int*)buffer), commandname);
+//     strcpy((char*)(4 + TASK_COMM_LEN / 4 + (int*)buffer), fullname);
+//     netlink_sendmsg(buffer, size);
 
-    return 0;
-}
+//     return 0;
+// }
 
 
 

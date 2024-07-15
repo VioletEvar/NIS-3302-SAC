@@ -45,7 +45,7 @@ typedef asmlinkage long (*orig_connect_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_accept_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_sendto_t)(struct pt_regs *regs);
 typedef asmlinkage long (*orig_recvfrom_t)(struct pt_regs *regs);
-typedef asmlinkage long (*orig_close_t)(struct pt_regs *regs);
+// typedef asmlinkage long (*orig_close_t)(struct pt_regs *regs);
 
 demo_sys_call_ptr_t *get_syscall_table(void);
 
@@ -66,7 +66,7 @@ int AuditConnect(int sockfd, struct sockaddr *addr, int addrlen);
 int AuditAccept(int sockfd, struct sockaddr *addr, int *addrlen);
 int AuditSendto(int sockfd, void *buf, size_t len, int flags, struct sockaddr *dest_addr, int addrlen);
 int AuditRecvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, int *addrlen);
-int AuditClose(int fd);
+// int AuditClose(int fd);
 
 void netlink_release(void);
 void netlink_init(void);
@@ -88,7 +88,7 @@ orig_connect_t orig_connect = NULL;
 orig_accept_t orig_accept = NULL;
 orig_sendto_t orig_sendto = NULL;
 orig_recvfrom_t orig_recvfrom = NULL;
-orig_close_t orig_close = NULL;
+// orig_close_t orig_close = NULL;
 unsigned int level;
 pte_t *pte;
 
@@ -380,16 +380,16 @@ asmlinkage long hooked_sys_recvfrom(struct pt_regs *regs)
     return ret;
 }
 
-asmlinkage long hooked_sys_close(struct pt_regs *regs)
-{
-    int fd = regs->di;
+// asmlinkage long hooked_sys_close(struct pt_regs *regs)
+// {
+//     int fd = regs->di;
 
-    long ret = orig_close(regs);
+//     long ret = orig_close(regs);
 
-    AuditClose(fd);
+//     AuditClose(fd);
 
-    return ret;
-}
+//     return ret;
+// }
 
 
 
@@ -416,7 +416,7 @@ static int __init audit_init(void)
     orig_accept = (orig_accept_t)sys_call_table[__NR_accept];
     orig_sendto = (orig_sendto_t)sys_call_table[__NR_sendto];
     orig_recvfrom = (orig_recvfrom_t)sys_call_table[__NR_recvfrom];
-    orig_close = (orig_close_t)sys_call_table[__NR_close];
+    // orig_close = (orig_close_t)sys_call_table[__NR_close];
 
     pte = lookup_address((unsigned long)sys_call_table, &level);
     set_pte_atomic(pte, pte_mkwrite(*pte));
@@ -440,7 +440,7 @@ static int __init audit_init(void)
     sys_call_table[__NR_accept] = (demo_sys_call_ptr_t)hooked_sys_accept;
     sys_call_table[__NR_sendto] = (demo_sys_call_ptr_t)hooked_sys_sendto;
     sys_call_table[__NR_recvfrom] = (demo_sys_call_ptr_t)hooked_sys_recvfrom;
-    sys_call_table[__NR_close] = (demo_sys_call_ptr_t)hooked_sys_close;
+    // sys_call_table[__NR_close] = (demo_sys_call_ptr_t)hooked_sys_close;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
     printk("Info: sys_call_table hooked!\n");
@@ -472,7 +472,7 @@ static void __exit audit_exit(void)
     sys_call_table[__NR_accept] = (demo_sys_call_ptr_t)orig_accept;
     sys_call_table[__NR_sendto] = (demo_sys_call_ptr_t)orig_sendto;
     sys_call_table[__NR_recvfrom] = (demo_sys_call_ptr_t)orig_recvfrom;
-    sys_call_table[__NR_close] = (demo_sys_call_ptr_t)orig_close;
+    // sys_call_table[__NR_close] = (demo_sys_call_ptr_t)orig_close;
 
     set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
 
