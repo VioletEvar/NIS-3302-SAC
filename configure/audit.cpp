@@ -105,9 +105,6 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
     else if(commandname == "reboot"){
         operationtype = "Reboot";
     }
-    else if(commandname == "reboot"){
-        operationtype = "Reboot";
-    }
     else if(commandname == "shutdown"){
         operationtype = "Shutdown";
     }
