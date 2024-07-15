@@ -39,8 +39,11 @@ void Log(char *commandname,int uid, int pid, char *file_path, int flags,int ret)
     if (strcmp(commandname, "rm") == 0) {
     strcpy(operationtype, "Delete");
     } 
-    else if (strcmp(commandname, "insmod") == 0 || strcmp(commandname, "rmmod") == 0) {
-        strcpy(operationtype, "Module");
+    else if (strcmp(commandname, "insmod") == 0) {
+        strcpy(operationtype, "ModuleInstall");
+    }
+    else if (strcmp(commandname, "rmmod") == 0) {
+        strcpy(operationtype, "ModuleRemove");
     }
     else if (strcmp(commandname, "reboot") == 0) {
         strcpy(operationtype, "Reboot");
