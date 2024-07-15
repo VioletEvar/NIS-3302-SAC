@@ -95,7 +95,47 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
 
     if (commandname == "rm") {
         operationtype = "Delete";
-    } else {
+    }
+    else if(commandname == "insmod"){
+        operationtype = "ModuleInstall";
+    } 
+    else if(commandname == "rmmod"){
+        operationtype = "ModuleRemove";
+    }
+    else if(commandname == "reboot"){
+        operationtype = "Reboot";
+    }
+    else if(commandname == "reboot"){
+        operationtype = "Reboot";
+    }
+    else if(commandname == "shutdown"){
+        operationtype = "Shutdown";
+    }
+    else if(commandname == "mount"){
+        operationtype = "umount";
+    }
+    else if(commandname == "socket"){
+        operationtype = "Socket";
+    }
+    else if(commandname == "connect"){
+        operationtype = "Connect";
+    }
+    else if(commandname == "accept"){
+        operationtype = "Accept";
+    }
+    else if(commandname == "sendto"){
+        operationtype = "Sendto";
+    }
+    else if(commandname == "recvfrom"){
+        operationtype = "Recvfrom";
+    }
+    else if(commandname == "close"){
+        operationtype = "Close";
+    }
+    else if(flags == 524288){
+        operationtype = "Execute";
+    }
+    else {
         if (flags & O_RDONLY) operationtype = "Read";
         else if (flags & O_WRONLY) operationtype = "Write";
         else if (flags & O_RDWR) operationtype = "Read/Write";
