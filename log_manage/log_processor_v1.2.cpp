@@ -205,7 +205,7 @@ void queryOption(mysqlpp::Connection& conn) {
 void sortOption(mysqlpp::Connection& conn) {
     std::string sortCondition;
     sortCondition.clear();
-    std::cout << "Please enter the sorting conditions and specify ascending (ASC) or descending (DESC) order. For compound sorting, separate conditions with a comma and a space." << std::endl; << " For example:username ASC, time DESC " << std::endl;
+    std::cout << "Please enter the sorting conditions and specify ascending (ASC) or descending (DESC) order. For compound sorting, separate conditions with a comma and a space." << std::endl << " For example:username ASC, time DESC " << std::endl;
     getline(std::cin,sortCondition);
     std::vector<LogEntry> sortedEntries = sortLogEntries(conn, sortCondition);
     std::cout << "Sorted Entries by " << sortCondition << std::endl;
@@ -286,19 +286,19 @@ int main(int argc, char* argv[]) {
         insertLogEntries(conn, logEntries);
 
         std::cout << "Enter the operation (query/sort/merge/quit):"  ;
-        std::getline(cin, oprate);
-        switch (operate)
+        std::getline(std::cin, operate);
+        switch (operate[operate.size()-3])
         {
-            case 'query':
+            case 'e':
             queryOption(conn);
             break;
-            case 'sort':
+            case 'o':
             sortOption(conn);
             break;
-            case 'merge':
+            case 'r':
             mergeMode(conn);
             break;
-            case 'quit':
+            case 'u':
             return 0;
             default: std::cout << "Wrong input, please retry." << std::endl; break;
         }
