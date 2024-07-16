@@ -3,7 +3,7 @@ import argparse
 
 def run_audit():
     # 替换为 audit 程序的可执行文件路径
-    subprocess.run(["./test"])
+    subprocess.run(["./audit"])
 
 def run_log_processor(filepath):
     # 替换为 log_processor 程序的可执行文件路径
