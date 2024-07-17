@@ -286,7 +286,6 @@ int main(int argc, char* argv[]) {
     size_t i = 0;
     while(std::getline(file, line)) {
         logEntries[i].status = extractLastItem(line);
-        std::cout << "Last item :" << logEntries[i].status << " " << logEntries[i].status.size() << std::endl; //调试信息
         i++;
     }
 
