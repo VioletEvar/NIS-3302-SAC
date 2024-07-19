@@ -540,28 +540,6 @@ int AuditRmmod(const char *pathname, int ret)
 }
 
 
-// int AuditDeviceAdd(char *pathname, int ret)
-// {
-    
-// }
-
-// int AuditDeviceAddat(int dfd, char *pathname, int flags, int ret)
-// {
-
-// }
-
-
-// int AuditDeviceRemove(char *pathname, int ret)
-// {
-    
-// }
-
-// int AuditDeviceRemoveat(int dfd, char *pathname, int flags, int ret)
-// {
-
-// }
-
-
 int AuditMount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data, int ret)
 {
     char commandname[TASK_COMM_LEN];
