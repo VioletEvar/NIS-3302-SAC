@@ -1,0 +1,26 @@
+此为内核部分测试说明：
+首先需要修改一下netlinkp.c中的测试地址；
+将/home/szy/Desktop/test改为测试所用文件夹地址。
+然后在源文件（以demo文件夹为例）下进行编译：
+make,
+gcc -o auditdemo auditdemo.c
+而后插入内核模块：
+sudo insmod AuditModule.ko
+最后在该文件下命令行输入:./auditdemo即可开始测试
+
+在终端打开测试文件夹，输入命令进行测试：
+对应功能及测试代码如下：
+$touch testfile：系统自带功能，作为测试，验证是否编译成功，若成功则正式开始测试：
+$rm testfile：删除文件
+$insmod：插入模块
+$rmmod：删除模块
+$运行程序测试：
+eg，在测试文件夹下创建test.py，随意编写一段程序，以print(hello)为例
+而后命令行输入：python3 test.py
+$文件系统挂载/卸载以及网络通信类：
+
+$设备插入及删除：
+在源码（demo文件夹为例）文件夹下编译文件log_device.c：
+gcc -o device device.c -ludev
+运行之后插拔硬件，如U盘，即可在log日志中查看到相关记录。
+$开机关机监测：
