@@ -39,11 +39,11 @@ int main() {
     int day;
 
     // Example user information, replace with actual data if available
-    string username = "user";
+    string username = "szy";
     int uid = 1000; // Example UID
     string commandname = "command";
     int pid = 0000; // Example PID
-    string file_path = "/path/to/file"; // Example file path
+    string file_path = "/home/szy"; // Example file path
     string operationtype = "type"; // Example operation type
     string operationresult = "result"; // Example operation result
 
