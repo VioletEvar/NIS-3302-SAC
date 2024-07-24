@@ -164,6 +164,7 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
     logfile.flush();
 }
 
+// sendpid function from auditdemo
 void sendpid(unsigned int pid) {
     // Send message to initialize
     memset(&msg, 0, sizeof(msg));
@@ -195,6 +196,7 @@ void sendpid(unsigned int pid) {
     sendmsg(sock_fd, &msg, 0);
 }
 
+// killdeal function from auditdemo
 void killdeal_func(int signum) {
     std::cout << "The process is killed!" << std::endl;
     close(sock_fd);
@@ -205,8 +207,9 @@ void killdeal_func(int signum) {
     exit(0);
 }
 
+// logGeneration function, used to receive and analyse kernel message and decide if log should be generated
 void logGeneration() {
-    // Set the socket to non-blocking mode
+    // set the socket to non-blocking mode
     int flags = fcntl(sock_fd, F_GETFL, 0);
     fcntl(sock_fd, F_SETFL, flags | O_NONBLOCK);
 
@@ -222,15 +225,16 @@ void logGeneration() {
             }
         }
 
-        // Read message from kernel
+        // read message from kernel
         unsigned int uid, pid, flags, ret;
         char *file_path;
         char *commandname;
 
         int ret_val = recvmsg(sock_fd, &msg, 0);
         if (ret_val < 0) {
+            // if block, sleep for 0.1 second and continue, which prevents busy waiting
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));  // Short sleep to avoid busy-waiting
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));  // short sleep to avoid busy-waiting
                 continue;
             } else {
                 perror("recvmsg");
@@ -238,7 +242,7 @@ void logGeneration() {
             }
         }
 
-        // Analyze log info
+        // analyze log info
         uid = *(reinterpret_cast<unsigned int *>(NLMSG_DATA(nlh)));
         pid = *(1 + reinterpret_cast<int *>(NLMSG_DATA(nlh)));
         flags = *(2 + reinterpret_cast<int *>(NLMSG_DATA(nlh)));
@@ -246,7 +250,7 @@ void logGeneration() {
         commandname = reinterpret_cast<char *>(4 + reinterpret_cast<int *>(NLMSG_DATA(nlh)));
         file_path = reinterpret_cast<char *>(4 + 16 / 4 + reinterpret_cast<int *>(NLMSG_DATA(nlh)));
 
-        // Check resource flags
+        // check resource flags to decide if should log
         bool should_log = false;
         {
             std::lock_guard<std::mutex> lock(config_mutex);
@@ -260,7 +264,7 @@ void logGeneration() {
             continue;
         }
 
-        // Print log info
+        // print log info to terminal
         std::cout << "uid: " << uid << std::endl;
         std::cout << "pid: " << pid << std::endl;
         std::cout << "flags: " << flags << std::endl;
@@ -268,7 +272,7 @@ void logGeneration() {
         std::cout << "commandname: " << commandname << std::endl;
         std::cout << "file_path: " << file_path << std::endl;
         
-        // Generate log
+        // generate log using Log function
         Log(commandname, uid, pid, file_path, flags, ret);
     }
 }
