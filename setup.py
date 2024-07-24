@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-
+# 定义下载mysql所需库的函数
 def install_dependencies():
     print("Installing dependencies...")
     subprocess.run([
@@ -9,6 +9,7 @@ def install_dependencies():
     ], check=True)
     print("Dependencies installed successfully.")
 
+# 定义初始化数据库的函数
 def configure_database():
     print("Configuring MySQL database...")
     commands = [
