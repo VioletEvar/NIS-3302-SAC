@@ -31,8 +31,6 @@ DESCRIBE log_entries; //查看数据库表结构，验证是否创建成功；
 quit //可退出,也可以不退出新开终端,方便在程序运行途中随时查看数据库表内的内容变化；
 ```
 
-3.注意事项：将main函数的readLogFile和下面的file变量后面的括号内的路径改为自己电脑上实际log.txt的路径（通过属性查看路径），后续版本会提供命令行输入路径的功能，之后会将该部分替换。
-
 ### 编译指令
 
 ```c++
@@ -42,12 +40,12 @@ g++ -o log_processor log_processor.cpp -I/usr/include/mysql -I/usr/include/mysql
 ### 运行指令
 
 ```c++
-sudo ./log_processor  //需要sudo提权进行数据库操作
+sudo ./log_processor (自己本地log文件的绝对路径)//需要sudo提权进行数据库操作
 ```
 
 ### 备注：一些简单的数据库指令
 
-**在进行过use log_db的操作进入数据库后，可以使用一些指令来查询数据库表内的内容：**
+**在程序运行进入数据库后，可以使用一些指令来查询数据库表内的内容：**
 
 ```c++
 SELECT * FROM log_entries;  //查询数据库表内所有数据
