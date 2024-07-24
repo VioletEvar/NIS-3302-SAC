@@ -56,29 +56,37 @@ void readConfig(const std::string& config_file) {
             std::cerr << "Error reading config line: " << line << std::endl;
             continue;
         }
+        // store config in temp flags
         temp_flags[resource] = flag;
     }
+    // lock resource_flags to update
     std::lock_guard<std::mutex> lock(config_mutex);
     resource_flags = std::move(temp_flags);
+    // set config_changed flag
     config_changed = true;
 }
 
 // writeConfig function, used to update resource_flags
 void writeConfig(const std::string& config_file) {
+    // lock resource_flags to update
     std::lock_guard<std::mutex> lock(config_mutex);
     std::ofstream file(config_file);
     if (!file.is_open()) {
         std::cerr << "Error opening config file for writing." << std::endl;
         return;
     }
+    // update config file
     for (const auto& [resource, flag] : resource_flags) {
         file << resource << " " << flag << std::endl;
     }
 }
 
+// Log function, used to generate log and write log into log.txt
 void Log(const std::string& commandname, int uid, int pid, const std::string& file_path, int flags, int ret) {
+    // check if the command should be logged
     bool should_log = false;
     {
+        // lock resource_flags to check 
         std::lock_guard<std::mutex> lock(config_mutex);
         if (resource_flags.find(commandname) != resource_flags.end() && resource_flags[commandname]) {
             should_log = true;
