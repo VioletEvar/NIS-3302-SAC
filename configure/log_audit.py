@@ -1,9 +1,9 @@
 import subprocess
 import argparse
 
-def run_audit():
+def run_audit(filename):
     # 替换为 audit 程序的可执行文件路径
-    subprocess.run(["./audit"])
+    subprocess.run(["./audit", filename])
 
 def run_log_processor(filepath):
     # 替换为 log_processor 程序的可执行文件路径
@@ -16,7 +16,10 @@ def main():
     args = parser.parse_args()
 
     if args.run == 'audit':
-        run_audit()
+        if args.file:
+            run_audit(args.file)
+        else:
+            run_audit()
     elif args.run == 'log_processor':
         if args.file:
             run_log_processor(args.file)
