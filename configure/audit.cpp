@@ -105,7 +105,7 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
 
     if (ret >= 0) operationresult = "success";
     else operationresult = "failed";
-
+    // switch operationtype according to commandname
     if (commandname == "rm") {
         operationtype = "Delete";
     }
@@ -158,7 +158,7 @@ void Log(const std::string& commandname, int uid, int pid, const std::string& fi
     strcpy(username, pwinfo->pw_name);
 
     strftime(logtime, sizeof(logtime), TM_FMT, localtime(&t));
-    
+    // write log into logfile
     logfile << username << "(" << uid << ") " << commandname << "(" << pid << ") " << logtime 
             << " \"" << file_path << "\" " << operationtype << " " << operationresult << std::endl;
     logfile.flush();
