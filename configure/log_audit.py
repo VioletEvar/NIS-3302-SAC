@@ -1,10 +1,12 @@
 import subprocess
 import argparse
 
+# 定义执行audit的函数
 def run_audit(filename):
     # 替换为 audit 程序的可执行文件路径
     subprocess.run(["./audit", filename])
 
+# 定义执行log_processor的函数
 def run_log_processor(filepath):
     # 替换为 log_processor 程序的可执行文件路径
     subprocess.run(["./log_processor", filepath])
