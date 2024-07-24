@@ -12,6 +12,10 @@
 * 日志系统灵活性扩展：在应用层通过配置文件config.txt以消息通信形式向audit发送资源管理信息，在应用层生成log前进行资源合法性检验
 * GUI改编：实现图形化界面，为用户提供更为便捷的可视化操作。通过QT设计并实现一个图形用户界面，方便管理员进行配置和查看日志，界面功能包括配置指定操作、浏览和查询日志、导出日志等。
 
+## 程序使用说明
+* 内核模块说明请见kernel_module文件夹中的说明文档
+* audit和log_processor的详细使用说明请见configure文件夹中的对应markdown文档：audit_usage.md和log_processor_usage.md
+
 ## 程序编译
 * 在SAC-project文件夹下运行
 ```bash
