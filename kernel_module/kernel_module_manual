@@ -23,9 +23,11 @@ $文件系统挂载/卸载以及网络通信类：
 sudo mount -t tmpfs tmpfs /home/szy/Desktop/test
 卸载挂载点：
 sudo umount /home/szy/Desktop/test
-
 $设备插入及删除：
 在源码（demo文件夹为例）文件夹下编译文件log_device.c：
-gcc -o device device.c -ludev
-运行之后插拔硬件，如U盘，即可在log日志中查看到相关记录。
+gcc -o log_device log_device.c -ludev
+运行(./log_decive)之后插拔硬件，如U盘，即可在log日志中查看到相关记录。
 $开机关机监测：
+在源码文件夹下编译文件log_reboot.cpp:
+g++ -o log_reboot log_reboot.cpp
+运行(sudo ./log_reboot)即可记录近期的开关机日志。
