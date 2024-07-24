@@ -277,6 +277,7 @@ void logGeneration() {
     }
 }
 
+// userInteraction function, used to interact with user and update config
 void userInteraction(const std::string& config_file) {
     std::string command;
     while (true) {
@@ -290,6 +291,7 @@ void userInteraction(const std::string& config_file) {
             std::cout << "Enter flag (0 or 1): ";
             std::cin >> flag;
             {
+                // lock resource_flags to write
                 std::lock_guard<std::mutex> lock(config_mutex);
                 resource_flags[resource] = flag;
                 config_changed = true;
@@ -299,12 +301,14 @@ void userInteraction(const std::string& config_file) {
         }
     }
     stop_logging = true;
+    // update config file
     writeConfig(config_file);
 }
 
 int main(int argc, char *argv[]) {
     std::string config_file = "config.txt";
     char logpath[32];
+    // receive terminal command
     if (argc == 1) strcpy(logpath, "./log");
     else if (argc == 2) strncpy(logpath, argv[1], 32);
     else if (argc == 3) {
@@ -314,25 +318,29 @@ int main(int argc, char *argv[]) {
         std::cerr << "commandline parameters error! please check and try it!" << std::endl;
         exit(1);
     }
-
+    
     signal(SIGTERM, killdeal_func);
     sock_fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_TEST);
     nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(MAX_PAYLOAD));
     memset(nlh, 0, NLMSG_SPACE(MAX_PAYLOAD));
 
     sendpid(getpid());
-
+    
+    // open logfile
     logfile.open(logpath, std::ios::out | std::ios::app);
     if (!logfile.is_open()) {
         std::cerr << "Warning: cannot create log file" << std::endl;
         exit(1);
     }
-
+    
+    // read config file
     readConfig(config_file);
-
+    
+    // create log and user thread
     std::thread log_thread(logGeneration);
     std::thread user_thread(userInteraction, config_file);
-
+    
+    // wait for thread to terminate
     user_thread.join();
     log_thread.join();
 
