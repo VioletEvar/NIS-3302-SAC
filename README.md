@@ -13,7 +13,7 @@
 * GUI改编：实现图形化界面，为用户提供更为便捷的可视化操作。通过QT设计并实现一个图形用户界面，方便管理员进行配置和查看日志，界面功能包括配置指定操作、浏览和查询日志、导出日志等。
 
 ## 程序使用说明
-* 内核模块说明请见kernel_module文件夹中的说明文档
+* 内核模块说明请见kernel_module文件夹中的说明文档：kernel_module_manual
 * audit和log_processor的详细使用说明请见configure文件夹中的对应markdown文档：audit_usage.md和log_processor_usage.md
 
 ## 程序编译
