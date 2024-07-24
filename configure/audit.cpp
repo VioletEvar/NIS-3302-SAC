@@ -36,14 +36,18 @@ std::unordered_map<std::string, bool> resource_flags;
 std::atomic<bool> config_changed(false);
 std::atomic<bool> stop_logging(false);
 
+// readConfig function, used to read config file and load config into resource_flags
 void readConfig(const std::string& config_file) {
+    // store config in temp flag, transfer to resource_flag later
     std::unordered_map<std::string, bool> temp_flags;
+    // open config file
     std::ifstream file(config_file);
     if (!file.is_open()) {
         std::cerr << "Error opening config file." << std::endl;
         return;
     }
     std::string line;
+    // parse config using iss function
     while (std::getline(file, line)) {
         std::istringstream iss(line);
         std::string resource;
@@ -59,6 +63,7 @@ void readConfig(const std::string& config_file) {
     config_changed = true;
 }
 
+// writeConfig function, used to update resource_flags
 void writeConfig(const std::string& config_file) {
     std::lock_guard<std::mutex> lock(config_mutex);
     std::ofstream file(config_file);
