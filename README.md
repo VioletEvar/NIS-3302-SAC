@@ -28,3 +28,8 @@ python3 log_audit.py --run audit
 sudo python3 log_audit.py --run log_processor --file /path/to/log.txt
 ```
 
+## 程序卸载
+* 在SAC-project文件夹下运行
+```bash
+sudo python3 uninstall.py
+```
